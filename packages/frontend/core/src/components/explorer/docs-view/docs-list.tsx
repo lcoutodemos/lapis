@@ -162,6 +162,15 @@ export const DocsExplorer = ({
     contextValue.selectedDocIds$.next([]);
   }, [contextValue]);
 
+  const allDocIds = useMemo(
+    () => groups.flatMap((g: any) => g.items as string[]),
+    [groups]
+  );
+
+  const handleSelectAll = useCallback(() => {
+    contextValue.selectedDocIds$.next(allDocIds);
+  }, [contextValue, allDocIds]);
+
   const handleMultiDelete = useCallback(() => {
     if (disableMultiDelete) {
       handleCloseFloatingToolbar();
@@ -275,6 +284,10 @@ export const DocsExplorer = ({
           onDelete={disableMultiDelete ? undefined : handleMultiDelete}
           onRestore={onRestore ? handleMultiRestore : undefined}
           onClose={handleCloseFloatingToolbar}
+          onSelectAll={
+            !disableMultiDelete && !onRestore ? handleSelectAll : undefined
+          }
+          allSelected={selectedDocIds.length === allDocIds.length}
           content={
             <Trans
               i18nKey="com.affine.page.toolbar.selected"

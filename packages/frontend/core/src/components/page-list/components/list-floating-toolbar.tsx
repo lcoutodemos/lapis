@@ -1,4 +1,5 @@
 import {
+  CheckBoxCheckLinearIcon,
   CloseIcon,
   DeleteIcon,
   DeletePermanentlyIcon,
@@ -15,16 +16,27 @@ export const ListFloatingToolbar = ({
   open,
   onDelete,
   onRestore,
+  onSelectAll,
+  allSelected,
 }: {
   open: boolean;
   content: ReactNode;
   onClose: () => void;
   onDelete?: () => void;
   onRestore?: () => void;
+  onSelectAll?: () => void;
+  allSelected?: boolean;
 }) => {
   return (
     <FloatingToolbar className={styles.floatingToolbar} open={open}>
       <FloatingToolbar.Item>{content}</FloatingToolbar.Item>
+      {!!onSelectAll && !allSelected && (
+        <FloatingToolbar.Button
+          onClick={onSelectAll}
+          icon={<CheckBoxCheckLinearIcon />}
+          data-testid="list-toolbar-select-all"
+        />
+      )}
       <FloatingToolbar.Button onClick={onClose} icon={<CloseIcon />} />
       {(!!onRestore || !!onDelete) && <FloatingToolbar.Separator />}
       {!!onRestore && (

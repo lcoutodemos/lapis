@@ -236,15 +236,40 @@ const DragHandle = memo(function DragHandle({
 });
 const Select = memo(function Select({
   id,
+  groupId,
   ...props
-}: HTMLProps<HTMLDivElement>) {
+}: HTMLProps<HTMLDivElement> & { groupId?: string }) {
   const contextValue = useContext(DocExplorerContext);
   const selectMode = useLiveData(contextValue.selectMode$);
   const selectedDocIds = useLiveData(contextValue.selectedDocIds$);
 
-  const handleSelectChange = useCallback(() => {
-    id && contextValue.selectedDocIds$?.next([id]);
-  }, [id, contextValue]);
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!id) return;
+
+      if (!selectMode) {
+        // Enter select mode and select this doc
+        contextValue.selectMode$?.next(true);
+        contextValue.selectedDocIds$?.next([id]);
+        if (groupId) {
+          contextValue.prevCheckAnchorId$?.next(MixId.create(groupId, id));
+        }
+      } else {
+        // Toggle selection
+        contextValue.selectedDocIds$?.next(
+          selectedDocIds.includes(id)
+            ? selectedDocIds.filter((x: string) => x !== id)
+            : [...selectedDocIds, id]
+        );
+        if (groupId) {
+          contextValue.prevCheckAnchorId$?.next(MixId.create(groupId, id));
+        }
+      }
+    },
+    [id, groupId, selectMode, contextValue, selectedDocIds]
+  );
 
   if (!id) {
     return null;
@@ -254,12 +279,10 @@ const Select = memo(function Select({
     <div
       data-select-mode={selectMode}
       data-testid={`doc-list-item-select`}
+      onClick={handleClick}
       {...props}
     >
-      <Checkbox
-        checked={selectedDocIds.includes(id)}
-        onChange={handleSelectChange}
-      />
+      <Checkbox checked={selectedDocIds.includes(id)} onChange={() => {}} />
     </div>
   );
 });
@@ -313,7 +336,7 @@ const listMoreMenuContentOptions = {
   sideOffset: 12,
   alignOffset: -4,
 } as const;
-export const ListViewDoc = ({ docId }: DocListItemProps) => {
+export const ListViewDoc = ({ docId, groupId }: DocListItemProps) => {
   const t = useI18n();
   const docsService = useService(DocsService);
   const doc = useLiveData(docsService.list.doc$(docId));
@@ -332,7 +355,7 @@ export const ListViewDoc = ({ docId }: DocListItemProps) => {
     >
       <li className={styles.listViewRoot}>
         <DragHandle id={docId} className={styles.listDragHandle} />
-        <Select id={docId} className={styles.listSelect} />
+        <Select id={docId} groupId={groupId} className={styles.listSelect} />
         <DocIcon id={docId} className={styles.listIcon} />
         <div className={styles.listBrief}>
           <DocTitle

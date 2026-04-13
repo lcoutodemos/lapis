@@ -73,11 +73,13 @@ export const listSelect = style({
   alignItems: 'center',
   justifyContent: 'end',
   transition: 'width 0.25s ease, margin-left 0.25s ease',
-  // when select mode is on, the whole item can be clicked,
-  // the selection will be handled by the parent, the checkbox here just for the visual effect
-  pointerEvents: 'none',
+  cursor: 'pointer',
   selectors: {
     '&[data-select-mode="true"]': {
+      width: 24,
+      marginLeft: 0,
+    },
+    [`${listViewRoot}:hover &`]: {
       width: 24,
       marginLeft: 0,
     },
