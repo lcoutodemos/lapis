@@ -41,6 +41,7 @@ export type SessionStatus = 'idle' | 'running' | 'dead';
 interface QueuedRequest {
   requestId: string;
   prompt: string;
+  attachments?: string[];
   resolve: () => void;
   reject: (err: Error) => void;
   signal?: AbortSignal;
@@ -172,7 +173,8 @@ export class CLIControlPlane {
   async submit(
     prompt: string,
     sender: WebContents,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    attachments?: string[]
   ): Promise<string> {
     if (!this.initialized) await this.init();
 
@@ -196,6 +198,7 @@ export class CLIControlPlane {
       this.queue.push({
         requestId,
         prompt,
+        attachments,
         signal,
         resolve: () => outerResolve(requestId),
         reject: outerReject,
@@ -285,7 +288,8 @@ export class CLIControlPlane {
       for await (const event of this.transport.prompt(
         request.prompt,
         opts,
-        request.signal
+        request.signal,
+        request.attachments
       )) {
         this.lastActivityAt = Date.now();
 

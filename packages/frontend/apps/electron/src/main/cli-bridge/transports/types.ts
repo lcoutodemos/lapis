@@ -84,7 +84,8 @@ export interface ITransport {
   prompt(
     text: string,
     opts: TransportStartOptions,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    attachments?: string[]
   ): AsyncIterable<CLIEvent>;
 
   /** Kill any running process */

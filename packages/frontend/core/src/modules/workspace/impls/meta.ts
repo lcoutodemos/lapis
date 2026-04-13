@@ -107,6 +107,12 @@ export class WorkspaceMetaImpl implements WorkspaceMeta {
     this._yMap = map;
     this._proxy = createYProxy(map);
     this._yMap.observeDeep(this._handleDocCollectionMetaEvents);
+    // Process docs already present in the YDoc at construction time.
+    // observeDeep only fires on future changes, not existing state —
+    // so if docCollection is accessed after the workspace has synced,
+    // pre-existing docs would never emit docMetaAdded and blockCollections
+    // would remain empty.
+    this._handleDocMetaEvent();
   }
 
   private _handleCommonFieldsEvent() {

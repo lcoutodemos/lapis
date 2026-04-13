@@ -41,7 +41,8 @@ export class CLIBridge {
   async prompt(
     text: string,
     sender: WebContents,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    attachments?: string[]
   ): Promise<string> {
     if (!this.initialized) await this.init();
 
@@ -50,7 +51,7 @@ export class CLIBridge {
       this.capability.setActiveSender(sender);
     }
 
-    return this.controlPlane.submit(text, sender, signal);
+    return this.controlPlane.submit(text, sender, signal, attachments);
   }
 
   cancel(requestId: string): void {

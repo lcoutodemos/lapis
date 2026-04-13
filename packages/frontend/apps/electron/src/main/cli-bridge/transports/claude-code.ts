@@ -21,6 +21,37 @@ import { nanoid } from 'nanoid';
 import { logger } from '../../logger';
 import type { CLIEvent, ITransport, TransportStartOptions } from './types';
 
+/**
+ * Convert a data URL (data:<mime>;base64,<data>) into an Anthropic SDK
+ * content block.  Returns null for unrecognised or non-base64 URLs so callers
+ * can safely filter them out.
+ *
+ * Supported block types:
+ *  - image/*      → { type: "image", source: { type: "base64", ... } }
+ *  - application/pdf | text/* → { type: "document", source: { type: "base64", ... } }
+ */
+function dataUrlToContentBlock(dataUrl: string): unknown | null {
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/s);
+  if (!match) return null;
+  const [, mediaType, data] = match;
+
+  if (mediaType.startsWith('image/')) {
+    return {
+      type: 'image',
+      source: { type: 'base64', media_type: mediaType, data },
+    };
+  }
+
+  if (mediaType === 'application/pdf' || mediaType.startsWith('text/')) {
+    return {
+      type: 'document',
+      source: { type: 'base64', media_type: mediaType, data },
+    };
+  }
+
+  return null;
+}
+
 const buildSystemHint = (port: number): string =>
   `AFFiNE workspace API on 127.0.0.1:${port}
   GET  /docs                                           list docs (JSON)
@@ -47,7 +78,8 @@ export class ClaudeCodeTransport implements ITransport {
   async *prompt(
     text: string,
     opts: TransportStartOptions,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    attachments?: string[]
   ): AsyncIterable<CLIEvent> {
     // Build settings file for this session (hooks + MCP config)
     const settingsPath = await this.writeSettingsFile(opts);
@@ -77,13 +109,22 @@ export class ClaudeCodeTransport implements ITransport {
     // Write prompt to stdin using the --input-format stream-json envelope.
     // The outer { type, message } wrapper is required — sending a bare
     // { role, content } object causes Claude to exit silently with no output.
+    const content: unknown[] = [];
+
+    // Prepend image/document blocks before the text so Claude sees them first.
+    if (attachments?.length) {
+      for (const dataUrl of attachments) {
+        const block = dataUrlToContentBlock(dataUrl);
+        if (block) content.push(block);
+      }
+    }
+
+    content.push({ type: 'text', text });
+
     const inputMessage =
       JSON.stringify({
         type: 'user',
-        message: {
-          role: 'user',
-          content: [{ type: 'text', text }],
-        },
+        message: { role: 'user', content },
       }) + '\n';
 
     // Write the message, then close stdin only after the write has flushed.

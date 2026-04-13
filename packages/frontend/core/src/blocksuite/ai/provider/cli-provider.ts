@@ -19,6 +19,7 @@
  * This module is a no-op in browser/web builds (no electron APIs).
  */
 
+import { readBlobAsURL } from '../utils/image';
 import { AIProvider } from './ai-provider';
 
 // ---------------------------------------------------------------------------
@@ -197,13 +198,39 @@ function getToolActivityLabel(toolName: string, input: unknown): string {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Tool-activity event emitter
+// Lets the chat UI show ephemeral chips while tools are running without
+// injecting any text into the stored message content.
+// ---------------------------------------------------------------------------
+
+export type ToolActivityEvent =
+  | { status: 'active'; label: string }
+  | { status: 'done'; toolCount: number }
+  | { status: 'idle' };
+
+type ToolActivityListener = (event: ToolActivityEvent) => void;
+
+const _activityListeners = new Set<ToolActivityListener>();
+
+export const cliActivity = {
+  subscribe(fn: ToolActivityListener): () => void {
+    _activityListeners.add(fn);
+    return () => _activityListeners.delete(fn);
+  },
+  emit(event: ToolActivityEvent): void {
+    _activityListeners.forEach(fn => fn(event));
+  },
+};
+
 /**
  * Send a prompt to the CLI bridge and return an AsyncIterable<string>
  * that yields each text chunk as it streams.
  */
 function promptViaCLI(
   prompt: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  attachments?: string[]
 ): { [Symbol.asyncIterator](): AsyncIterableIterator<string> } {
   const { apis, events } = getElectronApis();
 
@@ -213,7 +240,7 @@ function promptViaCLI(
         throw new Error('CLI bridge not available (not running in Electron)');
       }
 
-      const { requestId } = await apis.prompt({ text: prompt });
+      const { requestId } = await apis.prompt({ text: prompt, attachments });
       console.info('[cli-provider] requestId', requestId);
 
       if (signal?.aborted) {
@@ -229,9 +256,8 @@ function promptViaCLI(
       // If not, we fall back to the task_complete result text so the chat
       // always shows something even when Claude spent the whole turn using tools.
       let streamedText = false;
-      // Track whether we injected any tool-activity labels so we can add
-      // a visual separator before the actual response text.
-      let hadToolActivity = false;
+      // Count tool calls so we can show "N tools used" in the done chip.
+      let toolCount = 0;
 
       const push = (chunk: string) => {
         chunks.push(chunk);
@@ -244,36 +270,37 @@ function promptViaCLI(
         console.info('[cli-provider] event', ev.type);
 
         if (ev.type === 'text_chunk' && ev.text) {
-          // If we showed tool activity labels, add a separator before the response
-          if (hadToolActivity && !streamedText) {
-            push('\n\n');
-          }
           streamedText = true;
           push(ev.text);
         } else if (ev.type === 'tool_call' && ev.toolName) {
+          toolCount += 1;
           const label = getToolActivityLabel(ev.toolName, ev.input);
-          // Format as a subtle italic line; newline prefix ensures it starts
-          // on its own line even if preceded by other activity labels
-          push(`\n*${label}...*`);
-          hadToolActivity = true;
+          // Emit ephemeral chip event — no text is injected into the message
+          cliActivity.emit({ status: 'active', label });
         } else if (ev.type === 'task_complete') {
           console.info('[cli-provider] task_complete — stream done');
           // If Claude only used tools and produced no streaming text, the
           // result summary is the only human-readable response. Push it as a
           // chunk so the chat panel always shows the assistant's reply.
           if (!streamedText && ev.text) {
-            // Add separator after activity labels if we had any
-            if (hadToolActivity) push('\n\n');
             push(ev.text);
-          } else if (!streamedText && !hadToolActivity) {
-            // Completely empty response — likely a cold-start or session init
-            // issue on the first Claude Code spawn. Show a recoverable nudge.
+          } else if (!streamedText && toolCount > 0) {
+            // Claude used tools but sent no streaming text and no summary.
+            // This is the "silent action" case — e.g., wrote to the document.
+            // Show a minimal confirmation so the chat panel never shows a blank bubble.
+            push('Done.');
+          } else if (!streamedText) {
+            // Completely empty — likely a cold-start or session init issue.
             push('_(No response received — please send your message again.)_');
           }
+          // Emit done chip, then clear after 1800 ms
+          cliActivity.emit({ status: 'done', toolCount });
+          setTimeout(() => cliActivity.emit({ status: 'idle' }), 1800);
           done = true;
           wakeUp?.();
         } else if (ev.type === 'error') {
           console.error('[cli-provider] error', ev.message);
+          cliActivity.emit({ status: 'idle' });
           error = ev.message ?? 'Unknown error';
           done = true;
           wakeUp?.();
@@ -658,7 +685,7 @@ export function registerCLIProvider(): void {
       ] as any;
     },
     cleanup: async (
-      workspaceId: string,
+      _workspaceId: string,
       _docId: string | undefined,
       sessionIds: string[]
     ) => {
@@ -744,6 +771,16 @@ export function registerCLIProvider(): void {
       // The user's original input (not the transformed CLI prompt) for display
       const userText = (opts?.input as string | undefined) ?? prompt;
 
+      // Collect image / file data URLs to forward as content blocks.
+      // opts.attachments is Blob[] (from the chat input component). Convert
+      // each Blob to a data URL so they can be serialised over IPC to main.
+      const rawAttachments: Blob[] | undefined = opts?.attachments as
+        | Blob[]
+        | undefined;
+      const attachments: string[] | undefined = rawAttachments?.length
+        ? await Promise.all(rawAttachments.map(b => readBlobAsURL(b)))
+        : undefined;
+
       if (opts.stream) {
         // Store messages AFTER the stream ends, not before.
         // Storing the user message before the stream mutates session.messages
@@ -751,7 +788,7 @@ export function registerCLIProvider(): void {
         // setStatus('transmitting')) and sees hasSessionHistory = true, which
         // changes contentKey from doc.id to session.sessionId, tearing down
         // and recreating AIChatContent mid-stream, losing the first response.
-        const inner = promptViaCLI(prompt, opts.signal);
+        const inner = promptViaCLI(prompt, opts.signal, attachments);
         return {
           [Symbol.asyncIterator]: async function* () {
             let fullText = '';
@@ -765,7 +802,11 @@ export function registerCLIProvider(): void {
         };
       } else {
         let result = '';
-        for await (const chunk of promptViaCLI(prompt, opts.signal)) {
+        for await (const chunk of promptViaCLI(
+          prompt,
+          opts.signal,
+          attachments
+        )) {
           result += chunk;
         }
         storeMessage(sessionId, workspaceId, 'user', userText);

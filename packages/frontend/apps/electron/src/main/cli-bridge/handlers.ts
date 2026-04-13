@@ -27,9 +27,14 @@ export const aiCliHandlers = {
    */
   prompt: async (
     e: Electron.IpcMainInvokeEvent,
-    { text }: { text: string }
+    { text, attachments }: { text: string; attachments?: string[] }
   ) => {
-    const requestId = await cliBridge.prompt(text, e.sender);
+    const requestId = await cliBridge.prompt(
+      text,
+      e.sender,
+      undefined,
+      attachments
+    );
     return { requestId };
   },
 
