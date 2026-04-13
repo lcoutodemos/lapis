@@ -1,10 +1,26 @@
 import path from 'node:path';
 
+// Suppress EPIPE errors on stdout/stderr — these crash the main process when
+// the Sentry logger transport tries to write after the dev pipe has closed.
+process.stdout?.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code !== 'EPIPE') throw err;
+});
+process.stderr?.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code !== 'EPIPE') throw err;
+});
+
 import * as Sentry from '@sentry/electron/main';
 import { IPCMode } from '@sentry/electron/main';
 import { app, protocol } from 'electron';
 
+import { AffineLocalServer } from './affine-capability/local-server';
 import { createApplicationMenu } from './application-menu/create';
+import { beforeAppQuit } from './cleanup';
+import {
+  affineCapability,
+  cliBridge,
+  localServerRef,
+} from './cli-bridge/singleton';
 import { buildType, isDev, overrideSession } from './config';
 import { persistentConfig } from './config-storage/persist';
 import { setupDeepLink } from './deep-link';
@@ -106,6 +122,24 @@ app.on('activate', () => {
 setupDeepLink(app);
 registerSecurityRestrictions();
 
+async function bootstrapCLIBridge(): Promise<void> {
+  try {
+    const localServer = new AffineLocalServer(affineCapability);
+    localServerRef.current = localServer;
+    const localPort = await localServer.start();
+    cliBridge.setMcpPort(localPort);
+    await cliBridge.init();
+    beforeAppQuit(() => {
+      cliBridge.destroy();
+      localServer.stop();
+      localServerRef.current = null;
+    });
+    logger.info('[cli-bridge] ready, local REST port', localPort);
+  } catch (err) {
+    logger.error('[cli-bridge] bootstrap failed', err);
+  }
+}
+
 /**
  * Create app window when background process will be ready
  */
@@ -119,6 +153,7 @@ app
   .then(registerUpdater)
   .then(setupRecordingFeature)
   .then(setupTrayState)
+  .then(bootstrapCLIBridge)
   .catch(e => console.error('Failed create window:', e));
 
 if (process.env.SENTRY_RELEASE) {

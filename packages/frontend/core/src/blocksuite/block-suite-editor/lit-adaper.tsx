@@ -2,6 +2,7 @@
 import 'katex/dist/katex.min.css';
 
 import { useConfirmModal, useLitPortalFactory } from '@affine/component';
+import { setActiveCLIEditorHost } from '@affine/core/blocksuite/ai/provider/setup-cli-capability';
 import {
   type EdgelessEditor,
   LitDocEditor,
@@ -191,9 +192,27 @@ export const BlocksuiteDocEditor = forwardRef<
           ref.current = el;
         }
       }
+      // Register this editor as the active CLI editor host once it's ready
+      if (el) {
+        el.getUpdateComplete()
+          .then(() => {
+            // PageEditor exposes its EditorHost via the `host` property after
+            // the first render cycle
+            const host = (el as any).host ?? null;
+            setActiveCLIEditorHost(host);
+          })
+          .catch(() => {});
+      }
     },
     [ref]
   );
+
+  // Unregister host on unmount
+  useEffect(() => {
+    return () => {
+      setActiveCLIEditorHost(null);
+    };
+  }, []);
 
   const onTitleRef = useCallback(
     (el: DocTitle) => {
@@ -321,12 +340,14 @@ export const BlocksuiteEdgelessEditor = forwardRef<
 
   useEffect(() => {
     if (editorRef.current) {
-      editorRef.current.updateComplete
+      editorRef.current
+        .getUpdateComplete()
         .then(() => {
           // make sure editor can get keyboard events on showing up
-          editorRef.current
-            ?.querySelector<HTMLElement>('affine-edgeless-root')
-            ?.click();
+          const root = (editorRef.current as unknown as Element)?.querySelector(
+            'affine-edgeless-root'
+          ) as HTMLElement | null;
+          root?.click();
         })
         .catch(console.error);
     }

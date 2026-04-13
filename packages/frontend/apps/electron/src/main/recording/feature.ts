@@ -1,6 +1,6 @@
 /* oxlint-disable no-var-requires */
-import { execSync } from 'node:child_process';
 import fsp from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 
 import type * as NativeModuleType from '@affine/native';
@@ -662,9 +662,11 @@ export function serializeRecordingImportStatus(
 
 export const getMacOSVersion = () => {
   try {
-    const stdout = execSync('sw_vers -productVersion').toString();
-    const [major, minor, patch] = stdout.trim().split('.').map(Number);
-    return { major, minor, patch };
+    // Derive macOS version from Darwin kernel version via os.release()
+    // Darwin 20=macOS11, 21=12, 22=13, 23=14, 24=15, 25=26 ...
+    const darwinMajor = parseInt(os.release().split('.')[0] ?? '0', 10);
+    const macosMajor = darwinMajor >= 20 ? darwinMajor - 9 : 0;
+    return { major: macosMajor, minor: 0, patch: 0 };
   } catch (error) {
     logger.error('Failed to get MacOS version', error);
     return { major: 0, minor: 0, patch: 0 };

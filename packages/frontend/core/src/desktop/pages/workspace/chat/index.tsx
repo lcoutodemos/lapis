@@ -1,5 +1,4 @@
 import { observeResize, useConfirmModal } from '@affine/component';
-import { CopilotClient } from '@affine/core/blocksuite/ai';
 import {
   AIChatContent,
   type ChatContextValue,
@@ -10,6 +9,7 @@ import {
   configureAIChatToolbar,
   getOrCreateAIChatToolbar,
 } from '@affine/core/blocksuite/ai/components/ai-chat-toolbar';
+import { AIProvider } from '@affine/core/blocksuite/ai/provider/ai-provider';
 import type { PromptKey } from '@affine/core/blocksuite/ai/provider/prompt';
 import { getViewManager } from '@affine/core/blocksuite/manager/view';
 import { NotificationServiceImpl } from '@affine/core/blocksuite/view-extensions/editor-view/notification-service';
@@ -21,12 +21,7 @@ import {
   AIToolsConfigService,
 } from '@affine/core/modules/ai-button';
 import { AIModelService } from '@affine/core/modules/ai-button/services/models';
-import {
-  EventSourceService,
-  GraphQLService,
-  ServerService,
-  SubscriptionService,
-} from '@affine/core/modules/cloud';
+import { ServerService, SubscriptionService } from '@affine/core/modules/cloud';
 import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
 import { FeatureFlagService } from '@affine/core/modules/feature-flag';
 import { PeekViewService } from '@affine/core/modules/peek-view';
@@ -40,6 +35,7 @@ import {
   WorkbenchService,
 } from '@affine/core/modules/workbench';
 import { WorkspaceService } from '@affine/core/modules/workspace';
+import type { CopilotChatHistoryFragment } from '@affine/graphql';
 import { useI18n } from '@affine/i18n';
 import { RefNodeSlotsProvider } from '@blocksuite/affine/inlines/reference';
 import { BlockStdScope } from '@blocksuite/affine/std';
@@ -52,17 +48,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createSessionDeleteHandler } from '../chat-panel-utils';
 import * as styles from './index.css';
 
-type CopilotSession = Awaited<ReturnType<CopilotClient['getSession']>>;
-
-function useCopilotClient() {
-  const graphqlService = useService(GraphQLService);
-  const eventSourceService = useService(EventSourceService);
-
-  return useMemo(
-    () => new CopilotClient(graphqlService.gql, eventSourceService.eventSource),
-    [graphqlService, eventSourceService]
-  );
-}
+type CopilotSession = CopilotChatHistoryFragment | null | undefined;
 
 function createMockStd(workspace: Workspace) {
   workspace.meta.initialize();
@@ -103,7 +89,6 @@ export const Component = () => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatToolContainerRef = useRef<HTMLDivElement>(null);
   const widthSignalRef = useRef<Signal<number>>(signal(0));
-  const client = useCopilotClient();
   const workbench = useService(WorkbenchService).workbench;
 
   const workspaceId = useService(WorkspaceService).workspace.id;
@@ -120,16 +105,16 @@ export const Component = () => {
       if (currentSession) {
         return currentSession;
       }
-      const session = await client.createSessionWithHistory({
+      const session = await AIProvider.session?.createSessionWithHistory({
         workspaceId,
         promptName: 'Chat With AFFiNE AI' satisfies PromptKey,
         reuseLatestChat: false,
         ...options,
       });
-      setCurrentSession(session);
+      setCurrentSession(session ?? null);
       return session;
     },
-    [client, currentSession, workspaceId]
+    [currentSession, workspaceId]
   );
 
   const togglePin = useCallback(async () => {
@@ -140,21 +125,21 @@ export const Component = () => {
       if (!currentSession) {
         await createSession({ pinned });
       } else {
-        await client.updateSession({
+        await AIProvider.session?.updateSession({
           sessionId: currentSession.sessionId,
           pinned,
         });
         // retrieve the latest session and update the state
-        const session = await client.getSession(
+        const session = await AIProvider.session?.getSession(
           workspaceId,
           currentSession.sessionId
         );
-        setCurrentSession(session);
+        setCurrentSession(session ?? null);
       }
     } finally {
       setIsTogglingPin(false);
     }
-  }, [client, createSession, currentSession, isTogglingPin, workspaceId]);
+  }, [createSession, currentSession, isTogglingPin, workspaceId]);
 
   // remove the old content to trigger re-mount
   // to avoid infinitely load and mount, should not make `chatContent` as dependency
@@ -173,26 +158,29 @@ export const Component = () => {
     try {
       setCurrentSession(null);
       reMountChatContent();
-      const session = await client.createSessionWithHistory({
+      const session = await AIProvider.session?.createSessionWithHistory({
         workspaceId,
         promptName: 'Chat With AFFiNE AI' satisfies PromptKey,
         reuseLatestChat: false,
       });
-      setCurrentSession(session);
+      setCurrentSession(session ?? null);
     } catch (error) {
       console.error(error);
     } finally {
       setIsOpeningSession(false);
     }
-  }, [client, isOpeningSession, reMountChatContent, workspaceId]);
+  }, [isOpeningSession, reMountChatContent, workspaceId]);
 
   const onOpenSession = useCallback(
     async (sessionId: string) => {
       if (isOpeningSession || currentSession?.sessionId === sessionId) return;
       setIsOpeningSession(true);
       try {
-        const session = await client.getSession(workspaceId, sessionId);
-        setCurrentSession(session);
+        const session = await AIProvider.session?.getSession(
+          workspaceId,
+          sessionId
+        );
+        setCurrentSession(session ?? null);
         reMountChatContent();
         chatTool?.closeHistoryMenu();
       } catch (error) {
@@ -203,7 +191,6 @@ export const Component = () => {
     },
     [
       chatTool,
-      client,
       currentSession?.sessionId,
       isOpeningSession,
       reMountChatContent,
@@ -251,11 +238,11 @@ export const Component = () => {
         t,
         notificationService,
         cleanupSession: async sessionToDelete => {
-          await client.cleanupSessions({
-            workspaceId: sessionToDelete.workspaceId,
-            docId: sessionToDelete.docId || undefined,
-            sessionIds: [sessionToDelete.sessionId],
-          });
+          await AIProvider.histories?.cleanup(
+            sessionToDelete.workspaceId,
+            sessionToDelete.docId ?? undefined,
+            [sessionToDelete.sessionId]
+          );
         },
         isActiveSession: sessionToDelete =>
           sessionToDelete.sessionId === currentSession?.sessionId,
@@ -264,13 +251,7 @@ export const Component = () => {
           reMountChatContent();
         },
       }),
-    [
-      client,
-      currentSession?.sessionId,
-      notificationService,
-      reMountChatContent,
-      t,
-    ]
+    [currentSession?.sessionId, notificationService, reMountChatContent, t]
   );
 
   // init or update ai-chat-content
@@ -404,17 +385,15 @@ export const Component = () => {
     if (hasRestoredPinnedSessionRef.current || currentSession) return;
     hasRestoredPinnedSessionRef.current = true;
 
-    const controller = new AbortController();
+    let cancelled = false;
     const loadPinnedSession = async () => {
       try {
-        const sessions = await client.getSessions(
+        const sessions = await AIProvider.session?.getSessions(
           workspaceId,
-          {},
           undefined,
-          { pinned: true, limit: 1 },
-          controller.signal
+          { pinned: true, limit: 1 }
         );
-        if (controller.signal.aborted || !Array.isArray(sessions)) {
+        if (cancelled || !Array.isArray(sessions)) {
           return;
         }
         const pinnedSession = sessions[0];
@@ -430,22 +409,19 @@ export const Component = () => {
         });
         if (shouldRemount) reMountChatContent();
       } catch (error) {
-        if (controller.signal.aborted) {
-          return;
-        }
+        if (cancelled) return;
         console.error(error);
       }
     };
     loadPinnedSession().catch(error => {
-      if (controller.signal.aborted) return;
+      if (cancelled) return;
       console.error(error);
     });
 
-    // abort the request
     return () => {
-      controller.abort();
+      cancelled = true;
     };
-  }, [client, currentSession, reMountChatContent, workspaceId]);
+  }, [currentSession, reMountChatContent, workspaceId]);
 
   const onChatContainerRef = useCallback((node: HTMLDivElement) => {
     if (node) {

@@ -40,11 +40,15 @@ function spawnOrReloadElectron() {
     process.env.NODE_OPTIONS = NODE_OPTIONS.replace(/--import=[^\s]*/, '');
   }
 
-  spawnProcess = spawn(exe, ['.', '--inspect'], {
-    cwd: electronDir,
-    env: process.env,
-    shell: true,
-  });
+  spawnProcess = spawn(
+    exe,
+    ['.', '--inspect', '--remote-debugging-port=9222'],
+    {
+      cwd: electronDir,
+      env: process.env,
+      shell: true,
+    }
+  );
 
   spawnProcess.stdout.on('data', d => {
     const str = d.toString().trim();

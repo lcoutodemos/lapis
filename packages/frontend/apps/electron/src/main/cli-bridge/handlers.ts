@@ -1,0 +1,83 @@
+/**
+ * IPC handlers for the aiCli namespace.
+ *
+ * Exposed to the renderer via the allHandlers registry in main/handlers.ts.
+ * Channel format: aiCli:<key>
+ *
+ * Renderer calls:
+ *   apis.aiCli.prompt({ text, docContext? })  → requestId
+ *   apis.aiCli.cancel({ requestId })
+ *   apis.aiCli.respondPermission({ questionId, optionId })
+ *   apis.aiCli.setDocContext({ docId, markdown, workspaceId })
+ *   apis.aiCli.status()
+ *   apis.aiCli.capabilityResponse({ requestId, data?, error? })
+ */
+
+import { ipcMain } from 'electron';
+
+import { logger } from '../logger';
+import type { NamespaceHandlers } from '../type';
+import { cliBridge } from './singleton';
+
+export const aiCliHandlers = {
+  /**
+   * Submit a prompt. Returns the requestId immediately.
+   * Progress arrives as aiCli:event events on the renderer's event bus.
+   */
+  prompt: async (
+    e: Electron.IpcMainInvokeEvent,
+    { text }: { text: string }
+  ) => {
+    const requestId = await cliBridge.prompt(text, e.sender);
+    return { requestId };
+  },
+
+  /** Cancel an in-flight or queued request */
+  cancel: async (
+    _e: Electron.IpcMainInvokeEvent,
+    { requestId }: { requestId: string }
+  ) => {
+    cliBridge.cancel(requestId);
+    return { ok: true };
+  },
+
+  /** Forward permission decision from renderer to the hook server */
+  respondPermission: async (
+    _e: Electron.IpcMainInvokeEvent,
+    { questionId, optionId }: { questionId: string; optionId: string }
+  ) => {
+    cliBridge.respondPermission(questionId, optionId);
+    return { ok: true };
+  },
+
+  /** Health/state snapshot */
+  status: async () => {
+    return cliBridge.getStatus();
+  },
+
+  /**
+   * Renderer → main response for a capability IPC request.
+   * The capability layer opened a one-shot ipcMain.once listener keyed by
+   * requestId. This handler fires it.
+   */
+  capabilityResponse: async (
+    _e: Electron.IpcMainInvokeEvent,
+    {
+      requestId,
+      data,
+      error,
+    }: { requestId: string; data?: unknown; error?: string }
+  ) => {
+    // Fire the matching one-shot listener in AFFiNECapability
+    ipcMain.emit(`aiCli:capResponse:${requestId}`, null, { data, error });
+    return { ok: true };
+  },
+
+  /**
+   * Renderer signals that its capability handler is registered and ready.
+   */
+  capabilityReady: async () => {
+    logger.info('[cli-bridge] renderer capability ready');
+    return { ok: true };
+  },
+} satisfies NamespaceHandlers;

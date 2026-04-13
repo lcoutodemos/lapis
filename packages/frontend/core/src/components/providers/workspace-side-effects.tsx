@@ -8,6 +8,8 @@ import {
   CopilotClient,
   setupAIProvider,
 } from '@affine/core/blocksuite/ai';
+import { registerCLIProvider } from '@affine/core/blocksuite/ai/provider/cli-provider';
+import { setupCLICapability } from '@affine/core/blocksuite/ai/provider/setup-cli-capability';
 import { useRegisterFindInPageCommands } from '@affine/core/components/hooks/affine/use-register-find-in-page-commands';
 import { useRegisterWorkspaceCommands } from '@affine/core/components/hooks/use-register-workspace-commands';
 import { OverCapacityNotification } from '@affine/core/components/over-capacity';
@@ -142,6 +144,9 @@ export const WorkspaceSideEffects = () => {
   const authService = useService(AuthService);
 
   useEffect(() => {
+    // In Electron the CLI bridge is the sole AI backend — skip the cloud
+    // action registration entirely so it can never win a re-render race.
+    if (BUILD_CONFIG.isElectron) return;
     const dispose = setupAIProvider(
       new CopilotClient(graphqlService.gql, eventSourceService.eventSource),
       globalDialogService,
@@ -157,6 +162,16 @@ export const WorkspaceSideEffects = () => {
     globalDialogService,
     authService,
   ]);
+
+  // Wire up CLI capability + action overrides (Electron only)
+  useEffect(() => {
+    if (!BUILD_CONFIG.isElectron) return;
+    setupCLICapability({
+      docsService,
+      workspace: currentWorkspace,
+    });
+    registerCLIProvider();
+  }, [docsService, currentWorkspace]);
 
   useRegisterWorkspaceCommands();
   useRegisterNavigationCommands();
