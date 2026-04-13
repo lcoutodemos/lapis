@@ -146,6 +146,7 @@ export class ChatPanelDocChip extends SignalWatcher(
         const markdown = this.chip.markdown ?? new Signal<string>('');
         markdown.value = value;
         this.updateChip(this.chip, {
+          state: 'finished',
           markdown,
           tokenCount,
         });
