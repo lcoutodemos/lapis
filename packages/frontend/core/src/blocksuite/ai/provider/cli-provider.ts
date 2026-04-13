@@ -354,9 +354,26 @@ function buildActionPrompt(
     ? `\n\nThis is being performed on the document with ID: ${opts.docId}.`
     : '';
 
+  // Build inline context from any docs the user attached as chips.
+  // These are already extracted as markdown by the doc chip component.
+  const attachedDocs = ((opts as any).contexts?.docs ?? []) as Array<{
+    docId: string;
+    docTitle?: string;
+    docContent?: string;
+  }>;
+  const attachedDocsContext =
+    attachedDocs.length > 0
+      ? '\n\n---\n**Attached documents (use this content to answer):**\n\n' +
+        attachedDocs
+          .map(
+            d => `### ${d.docTitle || d.docId}\n\n${d.docContent ?? '(empty)'}`
+          )
+          .join('\n\n---\n\n')
+      : '';
+
   switch (actionId) {
     case 'chat':
-      return input + docContext;
+      return input + attachedDocsContext + docContext;
 
     case 'summary':
       return `Summarise the following content concisely:\n\n${input}${docContext}`;
