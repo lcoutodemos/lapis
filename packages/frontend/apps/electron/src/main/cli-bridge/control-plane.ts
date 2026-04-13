@@ -26,7 +26,7 @@ const MAX_QUEUE_DEPTH = 32;
 export interface ControlPlaneConfig {
   workingDir?: string;
   model?: string;
-  mcpPort?: number;
+  localServerPort?: number;
   maxTurns?: number;
 }
 
@@ -176,7 +176,6 @@ export class CLIControlPlane {
   /** Forward a permission decision from the renderer to the hook server */
   respondPermission(questionId: string, optionId: string): void {
     this.permissionHandler.respond(questionId, optionId);
-    this.transport.respondPermission(questionId, optionId);
   }
 
   /** Teardown — called on app quit */
@@ -218,7 +217,7 @@ export class CLIControlPlane {
       sessionId: this.sessionId ?? undefined,
       workingDir: this.config.workingDir,
       model: this.config.model,
-      mcpPort: this.config.mcpPort,
+      localServerPort: this.config.localServerPort,
       maxTurns: this.config.maxTurns ?? 50,
       hookPort: this.hookPort,
     };

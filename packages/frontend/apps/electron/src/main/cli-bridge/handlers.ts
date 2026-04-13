@@ -15,7 +15,6 @@
 
 import { ipcMain } from 'electron';
 
-import { logger } from '../logger';
 import type { NamespaceHandlers } from '../type';
 import { cliBridge } from './singleton';
 
@@ -75,9 +74,9 @@ export const aiCliHandlers = {
 
   /**
    * Renderer signals that its capability handler is registered and ready.
+   * No-op for now — kept for future local-server readiness gating.
    */
   capabilityReady: async () => {
-    logger.info('[cli-bridge] renderer capability ready');
     return { ok: true };
   },
 } satisfies NamespaceHandlers;

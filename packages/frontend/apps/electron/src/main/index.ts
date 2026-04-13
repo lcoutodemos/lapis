@@ -127,7 +127,7 @@ async function bootstrapCLIBridge(): Promise<void> {
     const localServer = new AffineLocalServer(affineCapability);
     localServerRef.current = localServer;
     const localPort = await localServer.start();
-    cliBridge.setMcpPort(localPort);
+    cliBridge.setLocalServerPort(localPort);
     await cliBridge.init();
     beforeAppQuit(() => {
       cliBridge.destroy();

@@ -48,8 +48,8 @@ export interface TransportStartOptions {
   workingDir?: string;
   /** Injected via --append-system-prompt */
   systemPrompt?: string;
-  /** Port of the Affine MCP HTTP server */
-  mcpPort?: number;
+  /** Port of the AFFiNE local REST server */
+  localServerPort?: number;
   /** Override model (e.g. claude-opus-4-5) */
   model?: string;
   /** Tools that are pre-approved without showing a permission card */
@@ -70,9 +70,6 @@ export interface ITransport {
     opts: TransportStartOptions,
     signal?: AbortSignal
   ): AsyncIterable<CLIEvent>;
-
-  /** Answer a pending permission request */
-  respondPermission(questionId: string, optionId: string): void;
 
   /** Kill any running process */
   stop(): void;

@@ -37,11 +37,10 @@ type PendingPermission = {
 
 const PERMISSION_TIMEOUT_MS = 120_000; // 2 minutes
 
-// All Claude Code built-in tools are auto-approved — they run in the main
-// process and are sandboxed. Only AFFiNE write tools (affine_apply_changes,
-// affine_create_page) require user approval.
+// Claude Code built-in tools are auto-approved — sandboxed in the main process.
+// AFFiNE writes arrive via Bash/curl, which is already in this set; individual
+// write ops (apply, create) are gated by the user via the permission UI instead.
 const SAFE_TOOLS = new Set([
-  // Claude Code built-ins (from session init tools list)
   'Task',
   'AskUserQuestion',
   'Bash',
@@ -75,12 +74,6 @@ const SAFE_TOOLS = new Set([
   'WebFetch',
   'WebSearch',
   'Write',
-  // AFFiNE read-only MCP tools
-  'affine_read_doc',
-  'affine_list_docs',
-  'affine_search_workspace',
-  'affine_get_selection',
-  'affine_get_block_tree',
 ]);
 
 export class PermissionHandler {

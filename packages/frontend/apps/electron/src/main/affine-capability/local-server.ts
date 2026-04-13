@@ -175,10 +175,7 @@ export class AffineLocalServer {
             return;
           }
           await this.capability.applyChanges(docId, parsed.markdown);
-          const message = parsed.reason
-            ? `Changes applied to document ${docId}. Reason: ${parsed.reason}. The content is now visible in the editor.`
-            : `Changes applied to document ${docId}. The content is now visible in the editor.`;
-          this.sendJson(res, 200, { ok: true, message });
+          this.sendJson(res, 200, { ok: true });
           return;
         }
       }

@@ -1,14 +1,14 @@
 /**
  * AFFiNE Capability Layer — main-process side.
  *
- * Bridges the MCP server (which handles Claude tool calls) to the renderer
- * (which owns the live Yjs store).
+ * Bridges the local REST server (which Claude reaches via Bash/curl) to the
+ * renderer (which owns the live Yjs store) via IPC.
  *
  * Read operations: send an IPC request to the renderer, wait for the
  * renderer to respond with serialised data.
  *
- * Write operations: send the proposed markdown change to the renderer,
- * which feeds it into the existing BlockDiffService → accept/reject flow.
+ * Write operations: send the proposed markdown to the renderer, which feeds
+ * it into insertFromMarkdown directly — changes are visible immediately.
  *
  * The renderer registers a listener on 'aiCli:capRequest' events and
  * responds via ipcMain.once('aiCli:capResponse:<requestId>').

@@ -22,37 +22,17 @@ import { logger } from '../../logger';
 import type { CLIEvent, ITransport, TransportStartOptions } from './types';
 
 const buildSystemHint = (port: number): string =>
-  `You are running inside AFFiNE, a collaborative knowledge workspace.
-Access your AFFiNE workspace via the local REST API:
-
-  List all documents:  curl -s http://127.0.0.1:${port}/docs
-  Read a document:     curl -s http://127.0.0.1:${port}/docs/DOC_ID
-  Search workspace:    curl -s -X POST http://127.0.0.1:${port}/search -H 'Content-Type: application/json' -d '{"query":"QUERY","limit":10}'
-  Get selection:       curl -s http://127.0.0.1:${port}/selection
-  Get block tree:      curl -s http://127.0.0.1:${port}/docs/DOC_ID/blocks
-  Apply edits:         curl -s -X POST http://127.0.0.1:${port}/docs/DOC_ID/apply -H 'Content-Type: application/json' -d '{"markdown":"FULL_DOC_MARKDOWN","reason":"why"}'
-  Create page:         curl -s -X POST http://127.0.0.1:${port}/docs -H 'Content-Type: application/json' -d '{"title":"Title","content":"optional markdown"}'
-
-Always read a document before editing it. To write content, POST to /docs/DOC_ID/apply with the full document markdown — the changes are applied immediately and visible to the user. Never output markdown and expect it to be applied automatically.
-Block IDs appear as HTML comments in read output. You can omit block IDs when writing new content; they will be assigned automatically.`;
+  `AFFiNE workspace API on 127.0.0.1:${port}
+  GET  /docs                                           list docs (JSON)
+  GET  /docs/:id                                       read doc (markdown)
+  POST /search         {"query":"…","limit":10}        search docs (JSON)
+  POST /docs/:id/apply {"markdown":"…","reason":"…"}   write doc — read first, send full markdown
+  POST /docs           {"title":"…","content":"…"}     create doc
+Writes via /apply are immediately visible in the editor. Never emit markdown expecting it to be auto-applied.`;
 
 export class ClaudeCodeTransport implements ITransport {
-  /** Maps questionId → resolver function for pending permission responses */
-  private readonly pendingPermissions = new Map<
-    string,
-    (optionId: string) => void
-  >();
-
   /** Path to the settings file we write before each session */
   private settingsFilePath: string | null = null;
-
-  respondPermission(questionId: string, optionId: string): void {
-    const resolver = this.pendingPermissions.get(questionId);
-    if (resolver) {
-      resolver(optionId);
-      this.pendingPermissions.delete(questionId);
-    }
-  }
 
   stop(): void {
     // Individual processes are per-prompt; nothing persistent to kill here.
@@ -159,7 +139,9 @@ export class ClaudeCodeTransport implements ITransport {
       settingsPath,
     ];
 
-    const affineHint = opts.mcpPort ? buildSystemHint(opts.mcpPort) : '';
+    const affineHint = opts.localServerPort
+      ? buildSystemHint(opts.localServerPort)
+      : '';
     if (opts.systemPrompt) {
       args.push(
         '--append-system-prompt',
@@ -218,13 +200,6 @@ export class ClaudeCodeTransport implements ITransport {
       'WebFetch',
       'WebSearch',
       'Write',
-      'affine_read_doc',
-      'affine_list_docs',
-      'affine_search_workspace',
-      'affine_get_selection',
-      'affine_get_block_tree',
-      'affine_apply_changes',
-      'affine_create_page',
     ];
     if (safeTools.length > 0) {
       args.push('--allowedTools', safeTools.join(','));

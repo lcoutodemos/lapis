@@ -22,12 +22,9 @@ export class CLIBridge {
     this.controlPlane = new CLIControlPlane();
   }
 
-  /**
-   * Must be called once the MCP server is running so the bridge knows
-   * which port to pass to Claude sessions.
-   */
-  setMcpPort(port: number): void {
-    this.controlPlane['config'].mcpPort = port;
+  /** Tell the bridge which port the local REST server is on. */
+  setLocalServerPort(port: number): void {
+    this.controlPlane['config'].localServerPort = port;
   }
 
   setCapability(capability: AFFiNECapability): void {

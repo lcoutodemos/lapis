@@ -17,6 +17,7 @@ import { SystemPropertyTypes } from '../../system-property-types';
 import { WorkspacePropertyTypes } from '../../workspace-property-types';
 import { DocExplorerContext } from '../context';
 import { DocListItem } from './doc-list-item';
+import { DocsGraph } from './docs-graph';
 import * as styles from './docs-list.css';
 
 const GroupHeader = memo(function GroupHeader({
@@ -241,6 +242,10 @@ export const DocsExplorer = ({
   );
 
   const isEmpty = masonryItems.length === 0;
+
+  if (view === 'graph') {
+    return <DocsGraph />;
+  }
 
   if (isEmpty) {
     return <EmptyDocs allowCreate={false} style={{ height: '100%' }} />;
