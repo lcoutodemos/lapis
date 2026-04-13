@@ -8,7 +8,6 @@ import {
 import { PageHistoryModal } from '@affine/core/components/affine/page-history-modal';
 import { useGuard } from '@affine/core/components/guard';
 import { useBlockSuiteMetaHelper } from '@affine/core/components/hooks/affine/use-block-suite-meta-helper';
-import { useEnableCloud } from '@affine/core/components/hooks/affine/use-enable-cloud';
 import { useExportPage } from '@affine/core/components/hooks/affine/use-export-page';
 import { Export, MoveToTrash } from '@affine/core/components/page-list';
 import { IsFavoriteIcon } from '@affine/core/components/pure/icons';
@@ -141,8 +140,6 @@ const PageHeaderMenuItem = ({
   const pageId = page?.id;
   const t = useI18n();
   const { hideShare } = useDetailPageHeaderResponsive(containerWidth);
-  const confirmEnableCloud = useEnableCloud();
-
   const workspace = useService(WorkspaceService).workspace;
   const guardService = useService(GuardService);
   const editorService = useService(EditorService);
@@ -312,11 +309,6 @@ const PageHeaderMenuItem = ({
               <ShareMenuContent
                 workspaceMetadata={workspace.meta}
                 currentPage={page}
-                onEnableAffineCloud={() =>
-                  confirmEnableCloud(workspace, {
-                    openPageId: page.id,
-                  })
-                }
               />
             </div>
           }

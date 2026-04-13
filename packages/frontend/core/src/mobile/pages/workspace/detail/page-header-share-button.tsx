@@ -1,5 +1,4 @@
 import { IconButton, MobileMenu } from '@affine/component';
-import { useEnableCloud } from '@affine/core/components/hooks/affine/use-enable-cloud';
 import { DocService } from '@affine/core/modules/doc';
 import { ShareMenuContent } from '@affine/core/modules/share-menu';
 import { WorkspaceService } from '@affine/core/modules/workspace';
@@ -15,11 +14,6 @@ export const PageHeaderShareButton = () => {
   });
   const workspace = workspaceService.workspace;
   const doc = docService.doc.blockSuiteDoc;
-  const confirmEnableCloud = useEnableCloud();
-
-  if (workspace.meta.flavour === 'local') {
-    return null;
-  }
 
   return (
     <MobileMenu
@@ -28,11 +22,6 @@ export const PageHeaderShareButton = () => {
           <ShareMenuContent
             workspaceMetadata={workspace.meta}
             currentPage={doc}
-            onEnableAffineCloud={() =>
-              confirmEnableCloud(workspace, {
-                openPageId: doc.id,
-              })
-            }
           />
         </div>
       }

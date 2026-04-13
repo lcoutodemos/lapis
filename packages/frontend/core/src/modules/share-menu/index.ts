@@ -1,1 +1,1 @@
-export { CloudSvg, ShareMenuContent, SharePageButton } from './view';
+export { ShareMenuContent, SharePageButton } from './view';

@@ -24,7 +24,9 @@ trap cleanup EXIT INT TERM
 
 # ── kill stale instances ─────────────────────────────────────────────────────
 echo "[dev] killing stale processes..."
-pkill -f "Electron.*AFFiNE" 2>/dev/null || true
+# Kill any Electron using our userData dir (covers both old AFFiNE/ and new lapis/ paths)
+pkill -f "@affine/electron" 2>/dev/null || true
+# Also kill stale renderer/electron dev processes from either path
 pkill -f "affine.ts bundle.*electron-renderer" 2>/dev/null || true
 pkill -f "scripts/dev.ts" 2>/dev/null || true
 sleep 0.5
