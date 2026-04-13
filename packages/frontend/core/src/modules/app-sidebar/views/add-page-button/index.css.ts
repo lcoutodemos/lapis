@@ -5,7 +5,7 @@ import { style } from '@vanilla-extract/css';
 export const root = style({
   width: 30,
   height: 30,
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   boxShadow: cssVar('buttonShadow'),
   borderWidth: 0,
   background: cssVarV2('button/iconButtonSolid'),

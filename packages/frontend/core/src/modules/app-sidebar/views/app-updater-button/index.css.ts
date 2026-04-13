@@ -4,7 +4,7 @@ export const root = style({
   display: 'inline-flex',
   background: cssVar('white30'),
   alignItems: 'center',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   border: `1px solid ${cssVar('black10')}`,
   fontSize: cssVar('fontSm'),
   width: '100%',
@@ -121,7 +121,7 @@ export const versionLabel = style({
   background: cssVar('backgroundPrimaryColor'),
   fontSize: '10px',
   lineHeight: '18px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   marginLeft: '8px',
   maxWidth: '100px',
   overflow: 'hidden',
@@ -144,7 +144,7 @@ export const progress = style({
   position: 'relative',
   width: '100%',
   height: '4px',
-  borderRadius: '12px',
+  borderRadius: 'var(--affine-radius-md)',
   background: cssVar('black10'),
 });
 export const progressInner = style({
@@ -152,7 +152,7 @@ export const progressInner = style({
   top: 0,
   left: 0,
   height: '100%',
-  borderRadius: '12px',
+  borderRadius: 'var(--affine-radius-md)',
   background: cssVar('primaryColor'),
   transition: '0.1s',
 });

@@ -48,7 +48,7 @@ export const mobileStyles = {
     display: 'flex',
     flexDirection: 'column',
     padding: '12px 0 !important',
-    borderRadius: 22,
+    borderRadius: 'var(--affine-radius-round)',
   }),
   description: style({
     padding: '11px 22px',
@@ -100,7 +100,7 @@ export const mobileStyles = {
   action: style({
     width: '100%',
     height: 44,
-    borderRadius: 8,
+    borderRadius: 'var(--affine-radius-sm)',
     fontSize: 17,
     fontWeight: 400,
     letterSpacing: -0.43,

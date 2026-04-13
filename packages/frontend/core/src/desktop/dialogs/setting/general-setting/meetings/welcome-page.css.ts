@@ -37,7 +37,7 @@ export const beta = style({
   fontSize: cssVar('fontXs'),
   background: cssVarV2('chip/label/blue'),
   padding: '0 8px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   position: 'absolute',
   right: 32,
   top: 0,

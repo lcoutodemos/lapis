@@ -43,7 +43,7 @@ export const inputStyle = style({
   textAlign: 'center',
   ':hover': {
     background: cssVar('hoverColor'),
-    borderRadius: '4px',
+    borderRadius: 'var(--affine-radius-xs)',
   },
 });
 export const popperStyle = style({
@@ -51,7 +51,7 @@ export const popperStyle = style({
   // TODO(@catsjuice): for menu offset, need to be optimized
   marginTop: '16px',
   background: cssVar('backgroundOverlayPanelColor'),
-  borderRadius: '12px',
+  borderRadius: 'var(--affine-radius-md)',
   width: '300px',
   zIndex: cssVar('zIndexPopover'),
 });
@@ -144,11 +144,11 @@ export const dayStyle = style([
     color: cssVar('textPrimaryColor'),
     cursor: 'pointer',
     fontWeight: '400',
-    borderRadius: '8px',
+    borderRadius: 'var(--affine-radius-sm)',
     selectors: {
       '&[aria-selected="false"]:hover': {
         background: cssVar('hoverColor'),
-        borderRadius: '8px',
+        borderRadius: 'var(--affine-radius-sm)',
         transition: 'background-color 0.3s ease-in-out',
       },
       '&[aria-selected="true"]': {
@@ -184,12 +184,12 @@ export const mouthsStyle = style({
   lineHeight: '22px',
   padding: '6px 16px',
   fontWeight: '400',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   selectors: {
     '&:hover': {
       background: cssVar('hoverColor'),
       transition: 'background-color 0.3s ease-in-out',
-      borderRadius: '8px',
+      borderRadius: 'var(--affine-radius-sm)',
     },
     '&[aria-selected="true"]': {
       color: cssVar('black'),

@@ -67,7 +67,7 @@ export const wsCard = style({
   background: 'none',
   width: '100%',
   padding: 8,
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   gap: 8,
 
   ':active': {
@@ -88,7 +88,7 @@ export const wsName = style([
 export const signInIcon = style({
   width: 32,
   height: 32,
-  borderRadius: 6,
+  borderRadius: 'var(--affine-radius-xs)',
   border: `1px solid ${cssVarV2.tab.divider.divider}`,
   color: cssVarV2.icon.primary,
   display: 'flex',

@@ -4,7 +4,7 @@ import { style } from '@vanilla-extract/css';
 
 export const menuTriggerStyle = style({
   padding: '4px 0px 4px 4px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   justifyContent: 'space-between',
   display: 'flex',
   fontSize: cssVar('fontSm'),

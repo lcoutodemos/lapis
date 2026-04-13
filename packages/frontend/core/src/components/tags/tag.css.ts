@@ -94,7 +94,7 @@ export const tagInlineMode = style([
   tagInnerWrapper,
   {
     fontSize: 'inherit',
-    borderRadius: '10px',
+    borderRadius: 'var(--affine-radius-sm)',
     columnGap: '4px',
     borderWidth: '1px',
     borderStyle: 'solid',
@@ -122,7 +122,7 @@ export const tagLabelMode = style([
     fontSize: cssVar('fontSm'),
     background: tagColorVar,
     padding: '0 8px',
-    borderRadius: 4,
+    borderRadius: 'var(--affine-radius-xs)',
     border: `1px solid ${cssVarV2('database/border')}`,
     gap: 4,
     selectors: {

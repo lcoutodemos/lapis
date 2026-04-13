@@ -5,7 +5,7 @@ export const container = style({
   position: 'relative',
   border: '1px solid rgba(100, 100, 100, 0.2)',
   padding: 8,
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   borderBottomRightRadius: HANDLE_SIZE / 2,
 });
 export const cornerHandle = style({
@@ -27,7 +27,7 @@ export const display = style({
   transform: 'rotate(-45deg)',
   transformOrigin: '0 0',
   whiteSpace: 'nowrap',
-  borderRadius: 6,
+  borderRadius: 'var(--affine-radius-xs)',
   background: cssVar('black'),
   color: cssVar('white'),
   borderTopLeftRadius: 0,

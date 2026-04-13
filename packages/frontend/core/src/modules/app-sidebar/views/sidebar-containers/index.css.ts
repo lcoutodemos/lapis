@@ -69,7 +69,7 @@ export const scrollbar = style({
 export const scrollbarThumb = style({
   position: 'relative',
   background: cssVar('black30'),
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   overflow: 'hidden',
   selectors: {
     '&::before': {

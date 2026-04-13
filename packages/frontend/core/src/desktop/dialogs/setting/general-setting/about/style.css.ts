@@ -25,7 +25,7 @@ export const communityWrapper = style({
   gap: '2%',
 });
 export const communityItem = style({
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   border: `1px solid ${cssVar('borderColor')}`,
   color: cssVar('textPrimaryColor'),
   cursor: 'pointer',

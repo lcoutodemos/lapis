@@ -27,12 +27,12 @@ export const signInWrapper = style({
   gap: '12px',
   alignItems: 'center',
   justifyContent: 'flex-start',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const iconContainer = style({
   width: '28px',
   padding: '2px 4px 4px',
-  borderRadius: '14px',
+  borderRadius: 'var(--affine-radius-md)',
   background: cssVar('white'),
   display: 'flex',
   border: `1px solid ${cssVar('iconSecondary')}`,
@@ -63,7 +63,7 @@ export const signInTextSecondary = style({
   whiteSpace: 'nowrap',
 });
 export const menuItem = style({
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const loadingWrapper = style({
   height: 42,

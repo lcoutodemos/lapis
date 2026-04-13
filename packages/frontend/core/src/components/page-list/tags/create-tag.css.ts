@@ -4,7 +4,7 @@ import { style } from '@vanilla-extract/css';
 export const createTagWrapper = style({
   alignItems: 'center',
   padding: '8px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   margin: '0 16px',
   display: 'flex',
   fontSize: cssVar('fontXs'),

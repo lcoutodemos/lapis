@@ -9,7 +9,7 @@ export const list = style({
 
 export const group = style({
   padding: '12px 16px',
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
   background: cssVarV2.layer.background.primary,
   display: 'flex',

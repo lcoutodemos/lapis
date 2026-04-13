@@ -21,7 +21,7 @@ export const fakeWrapper = style({
 
 export const membersPanel = style({
   padding: '4px',
-  borderRadius: '12px',
+  borderRadius: 'var(--affine-radius-md)',
   background: cssVarV2('layer/background/primary'),
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
   display: 'flex',
@@ -71,7 +71,7 @@ export const memberListItem = style({
   selectors: {
     '&:hover': {
       background: cssVarV2('layer/background/hoverOverlay'),
-      borderRadius: '8px',
+      borderRadius: 'var(--affine-radius-sm)',
     },
     '&:not(:last-of-type)': {
       marginBottom: '6px',

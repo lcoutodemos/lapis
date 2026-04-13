@@ -6,7 +6,7 @@ const width = 440;
 
 export const root = style({
   background: cssVarV2('layer/background/primary'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
   cursor: 'default',
   padding: '12px 10px',
@@ -46,7 +46,7 @@ export const buttonGroup = style({
 
 export const button = style({
   height: 26,
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   padding: '0 12px',
   fontSize: cssVar('fontXs'),
 });

@@ -82,7 +82,7 @@ export const mainContainerStyle = style({
 
   selectors: {
     '&[data-client-border="true"]': {
-      borderRadius: 6,
+      borderRadius: 'var(--affine-radius-xs)',
       padding: '8px',
       '@media': {
         print: {

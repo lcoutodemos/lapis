@@ -12,7 +12,7 @@ export const container = style({
 
 export const trigger = style({
   padding: '2px 4px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   flexShrink: 1,
   minWidth: 0,
 });
@@ -30,7 +30,7 @@ export const deletedIcon = style({
 });
 export const deletedTag = style({
   height: 20,
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   border: `1px solid ${cssVarV2.button.error}`,
   color: cssVarV2.button.error,
   fontSize: 12,

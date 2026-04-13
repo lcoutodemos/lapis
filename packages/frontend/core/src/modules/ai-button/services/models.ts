@@ -53,14 +53,22 @@ export class AIModelService extends Service {
   };
 
   setModel = (modelId: string) => {
-    const isSubscribed =
-      this.subscriptionService.subscription.ai$.value?.status ===
-      SubscriptionStatus.Active;
-    const model = this.models.value.find(model => model.id === modelId);
-    if (!isSubscribed && model?.isPro) {
-      return;
+    const model = this.models.value.find(m => m.id === modelId);
+    // In CLI/Electron mode all models are marked isPro=false, so no gate needed.
+    // In cloud mode, block pro models when not subscribed.
+    if (model?.isPro) {
+      const isSubscribed =
+        this.subscriptionService.subscription.ai$.value?.status ===
+        SubscriptionStatus.Active;
+      if (!isSubscribed) return;
     }
     this.globalStateService.globalState.set(AI_MODEL_ID_KEY, modelId);
+
+    // Keep the CLI bridge in sync if running in Electron
+    const cliApis = (window as any).__apis?.aiCli as
+      | { updateRuntimeOptions?: (opts: { model: string }) => Promise<unknown> }
+      | undefined;
+    cliApis?.updateRuntimeOptions?.({ model: modelId })?.catch(() => {});
   };
 
   private readonly init = async () => {
@@ -82,6 +90,46 @@ export class AIModelService extends Service {
   };
 
   private readonly initModels = async (prompt?: string) => {
+    // In Electron + CLI mode, populate models from the CLI bridge instead of
+    // the cloud GraphQL API (which is unavailable when running offline via CLI).
+    const cliApis = (window as any).__apis?.aiCli as
+      | {
+          getRuntimeOptions?: () => Promise<{
+            models: Array<{
+              id: string;
+              label: string;
+              category: string;
+              version: string;
+            }>;
+            selectedModel: string | null;
+          }>;
+        }
+      | undefined;
+
+    if (cliApis?.getRuntimeOptions) {
+      try {
+        const opts = await cliApis.getRuntimeOptions();
+        if (opts?.models?.length) {
+          this.models.value = opts.models.map(m => ({
+            name: m.label,
+            id: m.id,
+            version: m.version,
+            category: m.category,
+            isPro: false,
+            isDefault: m.id === (opts.selectedModel ?? 'claude-sonnet-4-6'),
+          }));
+          // Restore persisted selection if valid
+          const currentId = this.modelId.value;
+          if (currentId && !this.models.value.some(m => m.id === currentId)) {
+            this.resetModel();
+          }
+          return;
+        }
+      } catch {
+        // Fall through to GraphQL path
+      }
+    }
+
     const promptName = prompt || 'Chat With AFFiNE AI';
     const models = await this.getModelsByPrompt(promptName);
     if (models) {

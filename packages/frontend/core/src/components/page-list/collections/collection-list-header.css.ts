@@ -20,7 +20,7 @@ export const collectionListHeaderTitle = style({
 });
 export const newCollectionButton = style({
   padding: '6px 10px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   background: cssVar('backgroundPrimaryColor'),
   fontSize: cssVar('fontXs'),
   fontWeight: 500,

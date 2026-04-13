@@ -9,7 +9,7 @@ export const tag = style({
   height: 20,
   display: 'inline-flex',
   alignItems: 'center',
-  borderRadius: 10,
+  borderRadius: 'var(--affine-radius-sm)',
   fontSize: cssVar('fontXs'),
   selectors: {
     '&.weak': {

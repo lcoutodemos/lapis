@@ -8,7 +8,7 @@ export const planItemCard = style({
   width: '258px',
   height: '426px',
   flexShrink: '0',
-  borderRadius: '16px',
+  borderRadius: 'var(--affine-radius-lg)',
   backgroundColor: cssVar('backgroundPrimaryColor'),
   border: `1px solid ${cssVar('borderColor')}`,
   padding: '20px',

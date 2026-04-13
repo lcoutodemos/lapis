@@ -40,7 +40,7 @@ export const sidebarSelectItem = style({
   height: '30px',
   flexShrink: 0,
   fontSize: cssVar('fontSm'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   cursor: 'pointer',
   userSelect: 'none',
   ':hover': {
@@ -60,7 +60,7 @@ export const sidebarSelectSubItem = style({
   height: '30px',
   flexShrink: 0,
   fontSize: cssVar('fontSm'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   cursor: 'pointer',
   userSelect: 'none',
   color: cssVar('textSecondaryColor'),
@@ -98,7 +98,7 @@ export const sidebarSelectItemBeta = style({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '0 8px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   transform: 'translateX(2px)',
 });
 
@@ -128,7 +128,7 @@ export const sidebarGroup = style({
 
 export const accountButton = style({
   padding: '4px 8px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   cursor: 'pointer',
   userSelect: 'none',
   display: 'flex',

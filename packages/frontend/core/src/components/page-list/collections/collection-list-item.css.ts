@@ -25,7 +25,7 @@ export const root = style({
 
 export const dragPageItemOverlay = style({
   height: '45px',
-  borderRadius: '10px',
+  borderRadius: 'var(--affine-radius-sm)',
   display: 'flex',
   alignItems: 'center',
   background: cssVar('hoverColorFilled'),

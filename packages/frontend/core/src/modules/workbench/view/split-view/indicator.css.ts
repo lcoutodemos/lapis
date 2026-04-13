@@ -50,7 +50,7 @@ export const indicatorInnerWrapper = style({
   justifyContent: 'center',
   gap: 'inherit',
   backgroundColor: cssVarV2('layer/background/primary'),
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
 });
 
 export const indicatorDot = style({

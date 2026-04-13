@@ -11,5 +11,5 @@ export const containerStyle = style({
   padding: '0 4px',
   color: cssVarV2('button/pureWhiteText'),
   backgroundColor: cssVarV2('button/primary'),
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
 });

@@ -49,7 +49,7 @@ globalStyle(`${wrapper} .title`, {
 export const settingRow = style({
   marginBottom: '25px',
   color: cssVar('textPrimaryColor'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   selectors: {
     '&.two-col': {
       display: 'flex',
@@ -101,7 +101,7 @@ export const settingHeaderBeta = style({
   fontSize: cssVar('fontXs'),
   background: cssVarV2('chip/label/blue'),
   padding: '0 8px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',

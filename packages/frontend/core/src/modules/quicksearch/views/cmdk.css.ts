@@ -59,7 +59,7 @@ globalStyle(`${root} [cmdk-list]::-webkit-scrollbar`, {
   height: 6,
 });
 globalStyle(`${root} [cmdk-list]::-webkit-scrollbar-thumb`, {
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   backgroundClip: 'padding-box',
 });
 globalStyle(`${root} [cmdk-list]:hover::-webkit-scrollbar-thumb`, {
@@ -74,7 +74,7 @@ globalStyle(`${root} [cmdk-item]`, {
   padding: '6px 12px',
   alignItems: 'center',
   cursor: 'default',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   userSelect: 'none',
 });
 globalStyle(`${root} [cmdk-item][data-selected=true]`, {
@@ -115,7 +115,7 @@ export const pageTitleWrapper = style({
 
 export const pageTitle = style({
   padding: '2px 6px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   fontSize: cssVar('fontXs'),
   lineHeight: '20px',
   color: cssVar('textSecondaryColor'),
@@ -174,7 +174,7 @@ export const keybindingFragment = style({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '0 4px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   color: cssVar('textSecondaryColor'),
   backgroundColor: cssVar('backgroundTertiaryColor'),
   minWidth: 24,

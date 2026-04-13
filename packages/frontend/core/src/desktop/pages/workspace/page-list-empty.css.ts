@@ -15,7 +15,7 @@ export const emptyDescButton = style({
   color: cssVar('textSecondaryColor'),
   background: cssVar('backgroundCodeBlock'),
   border: `1px solid ${cssVar('borderColor')}`,
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   padding: '0 6px',
   boxSizing: 'border-box',
   selectors: {

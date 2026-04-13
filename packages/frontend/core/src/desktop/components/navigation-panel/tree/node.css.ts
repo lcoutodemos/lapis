@@ -8,7 +8,7 @@ export const linkItemRoot = style({
 export const itemRoot = style({
   display: 'inline-flex',
   alignItems: 'center',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   textAlign: 'left',
   color: 'inherit',
   width: '100%',
@@ -178,7 +178,7 @@ export const contentContainer = style({
 export const draggingContainer = style({
   background: cssVar('--affine-background-primary-color'),
   width: '200px',
-  borderRadius: '6px',
+  borderRadius: 'var(--affine-radius-xs)',
 });
 
 export const draggedOverEffect = style({

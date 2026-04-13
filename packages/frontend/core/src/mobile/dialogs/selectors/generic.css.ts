@@ -97,7 +97,7 @@ export const actions = style({
 export const actionButton = style({
   width: '100%',
   height: 44,
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
 
   fontSize: 17,
   fontWeight: 400,

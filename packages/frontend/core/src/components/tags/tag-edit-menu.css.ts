@@ -40,7 +40,7 @@ export const mobileTagColorIcon = style({
 
 export const mobileTagEditInput = style({
   height: 'auto',
-  borderRadius: 12,
+  borderRadius: 'var(--affine-radius-md)',
 });
 
 export const mobileTagEditDeleteRow = style({

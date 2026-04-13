@@ -88,7 +88,7 @@ export const error = style({
 export const itemContainer = style({
   display: 'flex',
   flexDirection: 'row',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   position: 'relative',
   padding: '8px',
   gap: '8px',
@@ -159,7 +159,7 @@ export const itemNameLabel = style({
 
 export const itemActionButton = style({
   width: 'fit-content',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
 });
 
 export const itemNameLabelIcon = style({

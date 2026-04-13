@@ -85,7 +85,7 @@ export const groupTitle = style([
 
 export const groupContent = style({
   background: cssVarV2('layer/background/primary'),
-  borderRadius: 12,
+  borderRadius: 'var(--affine-radius-md)',
   padding: 4,
   display: 'flex',
   flexDirection: 'column',

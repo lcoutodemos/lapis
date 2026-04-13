@@ -2,7 +2,7 @@ import { style } from '@vanilla-extract/css';
 
 export const wrapper = style({
   position: 'relative',
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   overflow: 'hidden',
   border: `1px solid rgba(125,125,125, 0.3)`,
   cursor: 'pointer',

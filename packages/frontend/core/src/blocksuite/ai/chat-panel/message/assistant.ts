@@ -103,18 +103,7 @@ export class ChatMessageAssistant extends WithDisposable(ShadowlessElement) {
   }
 
   renderHeader() {
-    const isWithDocs =
-      'content' in this.item &&
-      this.item.content &&
-      this.item.content.includes('[^') &&
-      /\[\^\d+\]:{"type":"doc","docId":"[^"]+"}/.test(this.item.content);
-
-    return html`<div class="user-info">
-      <chat-assistant-avatar .status=${this.status}></chat-assistant-avatar>
-      ${isWithDocs
-        ? html`<span class="message-info">with your docs</span>`
-        : nothing}
-    </div>`;
+    return nothing;
   }
 
   renderContent() {

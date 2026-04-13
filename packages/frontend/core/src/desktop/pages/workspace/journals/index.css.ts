@@ -54,13 +54,13 @@ export const placeholder = style({
   alignItems: 'center',
   justifyContent: 'center',
   border: `1px dashed ${cssVarV2.layer.insideBorder.border}`,
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
 });
 
 export const placeholderIcon = style({
   width: 36,
   height: 36,
-  borderRadius: 36,
+  borderRadius: 'var(--affine-radius-round)',
   backgroundColor: cssVarV2.button.emptyIconBackground,
   color: cssVarV2.icon.primary,
   display: 'flex',

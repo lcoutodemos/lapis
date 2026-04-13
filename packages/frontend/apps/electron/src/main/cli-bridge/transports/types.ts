@@ -3,6 +3,22 @@
  * Normalizes Claude Code NDJSON events and Copilot ACP session updates
  * into a single shape the control plane and renderer both consume.
  */
+
+export type PermissionMode = 'default' | 'ask' | 'allow-all';
+
+export interface CLIModel {
+  id: string;
+  label: string;
+  category: string;
+  version: string;
+}
+
+export interface RuntimeOptions {
+  models: CLIModel[];
+  selectedModel: string | null;
+  permissionMode: PermissionMode;
+}
+
 export type CLIEvent =
   | {
       type: 'session_init';

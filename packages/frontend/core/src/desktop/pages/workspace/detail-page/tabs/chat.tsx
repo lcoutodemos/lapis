@@ -1,4 +1,10 @@
-import { useConfirmModal } from '@affine/component';
+import {
+  Menu,
+  MenuItem,
+  MenuSeparator,
+  MenuSub,
+  useConfirmModal,
+} from '@affine/component';
 import { AIProvider } from '@affine/core/blocksuite/ai';
 import type { AppSidebarConfig } from '@affine/core/blocksuite/ai/chat-panel/chat-config';
 import {
@@ -13,6 +19,7 @@ import {
 } from '@affine/core/blocksuite/ai/components/ai-chat-toolbar';
 import { createPlaygroundModal } from '@affine/core/blocksuite/ai/components/playground/modal';
 import { registerAIAppEffects } from '@affine/core/blocksuite/ai/effects/app';
+import type { CLIModelInfo } from '@affine/core/blocksuite/ai/provider/cli-provider';
 import type { AffineEditorContainer } from '@affine/core/blocksuite/block-suite-editor';
 import { NotificationServiceImpl } from '@affine/core/blocksuite/view-extensions/editor-view/notification-service';
 import { useAIChatConfig } from '@affine/core/components/hooks/affine/use-ai-chat-config';
@@ -23,6 +30,8 @@ import {
   AIToolsConfigService,
 } from '@affine/core/modules/ai-button';
 import { AIModelService } from '@affine/core/modules/ai-button/services/models';
+import { AIReasoningService } from '@affine/core/modules/ai-button/services/reasoning';
+import type { AIToolsConfig } from '@affine/core/modules/ai-button/services/tools-config';
 import { ServerService, SubscriptionService } from '@affine/core/modules/cloud';
 import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
 import { useSignalValue } from '@affine/core/modules/doc-info/utils';
@@ -39,7 +48,11 @@ import { useI18n } from '@affine/i18n';
 import { RefNodeSlotsProvider } from '@blocksuite/affine/inlines/reference';
 import { DocModeProvider } from '@blocksuite/affine/shared/services';
 import { createSignalFromObservable } from '@blocksuite/affine/shared/utils';
-import { CenterPeekIcon, Logo1Icon } from '@blocksuite/icons/rc';
+import {
+  ArrowDownSmallIcon,
+  CenterPeekIcon,
+  Logo1Icon,
+} from '@blocksuite/icons/rc';
 import type { Signal } from '@preact/signals-core';
 import { useFramework, useService } from '@toeverything/infra';
 import { html } from 'lit';
@@ -51,6 +64,163 @@ import {
   resolveInitialSession,
   type WorkbenchLike,
 } from './chat-panel-session';
+
+// ---------------------------------------------------------------------------
+// Provider header — shows current provider/model and lets the user switch
+
+type PermissionMode = 'default' | 'ask' | 'allow-all';
+
+const PERMISSION_LABELS: Record<PermissionMode, string> = {
+  default: 'Default',
+  ask: 'Ask each time',
+  'allow-all': 'Allow all',
+};
+
+/**
+ * Detects whether the app is running inside the Electron CLI bridge.
+ * Evaluated once per render tree.
+ */
+function isElectronCLI(): boolean {
+  return !!(window as any).__apis?.aiCli;
+}
+
+/**
+ * Shows the active provider name ("Claude Code") and current model as a
+ * dropdown trigger. Opens a unified settings menu: model, extended thinking,
+ * workspace search, and (in Electron) tool approval mode.
+ */
+const ProviderHeader = () => {
+  const [models, setModels] = useState<CLIModelInfo[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [permissionMode, setPermissionMode] =
+    useState<PermissionMode>('default');
+  const electron = isElectronCLI();
+
+  const toolsConfigService = useService(AIToolsConfigService);
+  const reasoningService = useService(AIReasoningService);
+  const isReasoningEnabled = useSignalValue(reasoningService.enabled);
+  const toolsConfig = useSignalValue(
+    toolsConfigService.config
+  ) as AIToolsConfig | null;
+  const isWorkspaceSearch = !!(
+    toolsConfig?.searchWorkspace && toolsConfig?.readingDocs
+  );
+
+  useEffect(() => {
+    if (!electron) return;
+    const apis = (window as any).__apis?.aiCli;
+    if (!apis?.getRuntimeOptions) return;
+    apis
+      .getRuntimeOptions()
+      .then(
+        (opts: {
+          models?: CLIModelInfo[];
+          selectedModel?: string | null;
+          permissionMode?: PermissionMode;
+        }) => {
+          if (opts?.models) setModels(opts.models);
+          if (opts?.selectedModel !== undefined)
+            setSelectedModel(opts.selectedModel);
+          if (opts?.permissionMode) setPermissionMode(opts.permissionMode);
+        }
+      )
+      .catch(() => {});
+  }, [electron]);
+
+  const handleModelSelect = useCallback((modelId: string) => {
+    const apis = (window as any).__apis?.aiCli;
+    if (!apis?.updateRuntimeOptions) return;
+    apis.updateRuntimeOptions({ model: modelId }).catch(() => {});
+    setSelectedModel(modelId);
+  }, []);
+
+  const handlePermissionMode = useCallback((mode: PermissionMode) => {
+    const apis = (window as any).__apis?.aiCli;
+    apis?.updateRuntimeOptions?.({ permissionMode: mode })?.catch(() => {});
+    setPermissionMode(mode);
+  }, []);
+
+  if (!electron) {
+    // Web/cloud build — keep the original static label
+    return <span className={styles.title}>AI</span>;
+  }
+
+  // Determine displayed model label: fall back to short model ID if list not loaded yet
+  const current = models.find(m => m.id === selectedModel);
+  const modelLabel =
+    current?.version ??
+    (selectedModel
+      ? selectedModel
+          .replace(/^claude-/, '')
+          .split('-')
+          .slice(0, 2)
+          .join(' ')
+      : '');
+
+  const menuItems = (
+    <>
+      {models.map(m => (
+        <MenuItem
+          key={m.id}
+          selected={
+            selectedModel
+              ? selectedModel === m.id
+              : m.id === 'claude-sonnet-4-6'
+          }
+          onClick={() => handleModelSelect(m.id)}
+        >
+          {m.category} {m.version}
+        </MenuItem>
+      ))}
+      <MenuSeparator />
+      <MenuItem
+        checked={isReasoningEnabled ?? false}
+        onClick={() => reasoningService.setEnabled(!isReasoningEnabled)}
+      >
+        Extended Thinking
+      </MenuItem>
+      <MenuItem
+        checked={isWorkspaceSearch}
+        onClick={() =>
+          toolsConfigService.setConfig({
+            searchWorkspace: !isWorkspaceSearch,
+            readingDocs: !isWorkspaceSearch,
+          })
+        }
+      >
+        Workspace All Docs
+      </MenuItem>
+      <MenuSeparator />
+      <MenuSub
+        items={
+          <>
+            {(['default', 'ask', 'allow-all'] as PermissionMode[]).map(mode => (
+              <MenuItem
+                key={mode}
+                selected={permissionMode === mode}
+                onClick={() => handlePermissionMode(mode)}
+              >
+                {PERMISSION_LABELS[mode]}
+              </MenuItem>
+            ))}
+          </>
+        }
+      >
+        {`Approval · ${PERMISSION_LABELS[permissionMode]}`}
+      </MenuSub>
+    </>
+  );
+
+  return (
+    <Menu items={menuItems} contentOptions={{ align: 'start' }}>
+      <div className={styles.providerButton}>
+        <span>Claude Code</span>
+        {modelLabel && <span className={styles.modelBadge}>{modelLabel}</span>}
+        <ArrowDownSmallIcon className={styles.providerChevron} />
+      </div>
+    </Menu>
+  );
+};
 
 registerAIAppEffects();
 
@@ -660,7 +830,7 @@ export const EditorChatPanel = ({ editor, onLoad }: SidebarTabProps) => {
                   })}
                 </span>
               ) : (
-                t['com.affine.ai.chat-panel.title']()
+                <ProviderHeader />
               )}
             </div>
             {playgroundVisible ? (

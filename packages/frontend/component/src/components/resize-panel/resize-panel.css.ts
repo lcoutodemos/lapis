@@ -105,7 +105,7 @@ export const resizerInner = style({
   selectors: {
     [`${resizeHandleContainer}[data-resizing="true"] &`]: {
       width: '4px',
-      borderRadius: '4px',
+      borderRadius: 'var(--affine-radius-xs)',
     },
   },
 });

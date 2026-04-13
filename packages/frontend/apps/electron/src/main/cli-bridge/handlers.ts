@@ -5,11 +5,12 @@
  * Channel format: aiCli:<key>
  *
  * Renderer calls:
- *   apis.aiCli.prompt({ text, docContext? })  → requestId
+ *   apis.aiCli.prompt({ text })               → requestId
  *   apis.aiCli.cancel({ requestId })
  *   apis.aiCli.respondPermission({ questionId, optionId })
- *   apis.aiCli.setDocContext({ docId, markdown, workspaceId })
  *   apis.aiCli.status()
+ *   apis.aiCli.getRuntimeOptions()            → RuntimeOptions
+ *   apis.aiCli.updateRuntimeOptions({ model?, permissionMode? })
  *   apis.aiCli.capabilityResponse({ requestId, data?, error? })
  */
 
@@ -17,6 +18,7 @@ import { ipcMain } from 'electron';
 
 import type { NamespaceHandlers } from '../type';
 import { cliBridge } from './singleton';
+import type { PermissionMode } from './transports/types';
 
 export const aiCliHandlers = {
   /**
@@ -77,6 +79,23 @@ export const aiCliHandlers = {
    * No-op for now — kept for future local-server readiness gating.
    */
   capabilityReady: async () => {
+    return { ok: true };
+  },
+
+  /** Return the available models, selected model, and permission mode */
+  getRuntimeOptions: async () => {
+    return cliBridge.getRuntimeOptions();
+  },
+
+  /**
+   * Update runtime preferences — model and/or permission mode.
+   * Changes take effect on the next prompt spawn.
+   */
+  updateRuntimeOptions: async (
+    _e: Electron.IpcMainInvokeEvent,
+    opts: { model?: string | null; permissionMode?: PermissionMode }
+  ) => {
+    cliBridge.updateRuntimeOptions(opts);
     return { ok: true };
   },
 } satisfies NamespaceHandlers;

@@ -10,7 +10,7 @@ export const tag = style({
   color: cssVar('pureWhite'),
   backgroundColor: cssVar('brandColor'),
   padding: '0 4px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   justifyContent: 'center',
   alignItems: 'center',
 

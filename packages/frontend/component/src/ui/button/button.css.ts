@@ -37,7 +37,7 @@ export const button = style({
   justifyContent: 'center',
   userSelect: 'none',
   outline: 0,
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   transition: 'all .3s',
   ['WebkitAppRegion' as string]: 'no-drag',
 
@@ -221,7 +221,7 @@ export const iconButton = style({
     '--shadow':
       '0px 0px 1px 0px rgba(0, 0, 0, 0.12), 0px 1px 5px 0px rgba(0, 0, 0, 0.12)',
   },
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   selectors: {
     '[data-theme="dark"] &': {
       vars: {

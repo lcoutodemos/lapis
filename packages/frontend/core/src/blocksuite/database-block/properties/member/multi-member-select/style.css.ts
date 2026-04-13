@@ -16,7 +16,7 @@ export const memberInputContainer = style({
   flexWrap: 'wrap',
   gap: '4px',
   padding: '4px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   alignItems: 'center',
   border: `1px solid transparent`,
   borderColor: cssVarV2.layer.insideBorder.blackBorder,
@@ -82,7 +82,7 @@ export const memberItem = style({
   gap: '8px',
   overflow: 'hidden',
   padding: '4px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
 });
 
 export const memberName = style({

@@ -24,6 +24,11 @@ const views = [
     value: 'list',
     className: styles.viewToggleItem,
   },
+  {
+    label: <DocListViewIcon view="graph" />,
+    value: 'graph',
+    className: styles.viewToggleItem,
+  },
 ] satisfies RadioItem[];
 
 export const ViewToggle = ({

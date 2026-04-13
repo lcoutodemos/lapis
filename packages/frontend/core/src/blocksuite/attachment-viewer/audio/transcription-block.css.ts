@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
 
 export const root = style({
-  borderRadius: 6,
+  borderRadius: 'var(--affine-radius-xs)',
 });

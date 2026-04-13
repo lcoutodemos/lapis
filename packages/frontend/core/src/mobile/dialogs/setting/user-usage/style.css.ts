@@ -20,7 +20,7 @@ export const progressDesc = style([
 export const progressTrack = style({
   width: '100%',
   height: 10,
-  borderRadius: 5,
+  borderRadius: 'var(--affine-radius-xs)',
   backgroundColor: cssVarV2('layer/background/hoverOverlay'),
   overflow: 'hidden',
 });

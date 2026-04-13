@@ -18,7 +18,7 @@ export const itemBlock = style([
     justifyContent: 'space-between',
     padding: '19px 12px',
     background: cssVarV2('layer/background/mobile/secondary'),
-    borderRadius: 12,
+    borderRadius: 'var(--affine-radius-md)',
   },
 ]);
 export const itemDescription = style([

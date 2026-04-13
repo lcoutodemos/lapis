@@ -10,7 +10,7 @@ export const root = style({
 });
 
 export const svg = style({
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   selectors: {
     [`${root}[data-dragging="true"] &, ${root}:hover &`]: {
       backgroundColor: cssVarV2.layer.background.hoverOverlay,

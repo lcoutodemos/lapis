@@ -9,7 +9,7 @@ export const content = style({
   alignItems: 'center',
   gap: 4,
   padding: '12px 0px',
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   selectors: {
     // assume that the section can be dragged over
     '&[data-dragged-over="true"]': {

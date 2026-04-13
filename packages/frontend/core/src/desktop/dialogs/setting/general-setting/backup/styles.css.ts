@@ -6,7 +6,7 @@ export const listContainer = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '8px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   background: cssVarV2('layer/background/primary'),
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
   overflow: 'hidden',

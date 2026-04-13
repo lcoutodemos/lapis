@@ -40,7 +40,7 @@ export const pageItem = style({
   height: '20px',
   fontSize: cssVar('fontXs'),
   color: cssVarV2('text/primary'),
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
 
   selectors: {
     '&:hover': {

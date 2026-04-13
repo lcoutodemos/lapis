@@ -38,7 +38,7 @@ export const link = style({
   display: 'flex',
   alignItems: 'center',
   background: cssVar('black'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   border: `1px solid ${cssVar('pureBlack10')}`,
   boxShadow: cssVar('--affine-button-inner-shadow'),
   color: cssVar('white'),

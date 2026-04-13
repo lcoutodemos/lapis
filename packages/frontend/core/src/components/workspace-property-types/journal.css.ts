@@ -23,7 +23,7 @@ export const date = style({
   color: cssVarV2('text/primary'),
   lineHeight: '22px',
   padding: '0 4px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   whiteSpace: 'nowrap',
 
   selectors: {
@@ -38,5 +38,5 @@ export const duplicateTag = style({
   border: `1px solid ${cssVarV2('database/border')}`,
   background: cssVarV2('layer/background/error'),
   color: cssVarV2('toast/iconState/error'),
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
 });

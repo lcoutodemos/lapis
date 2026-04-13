@@ -12,7 +12,7 @@ export const planCard = style({
   padding: '12px',
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
   backgroundColor: cssVarV2('layer/white'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 
 export const container = style({

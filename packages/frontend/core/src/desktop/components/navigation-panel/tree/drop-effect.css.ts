@@ -10,7 +10,7 @@ export const dropEffect = style({
   boxShadow: cssVar('--affine-toolbar-shadow'),
   padding: '0px 4px',
   fontSize: '12px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   lineHeight: 1.4,
   display: 'flex',
   justifyContent: 'center',

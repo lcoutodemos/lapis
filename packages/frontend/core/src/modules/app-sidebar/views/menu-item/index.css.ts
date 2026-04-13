@@ -7,7 +7,7 @@ export const linkItemRoot = style({
 export const root = style({
   display: 'inline-flex',
   alignItems: 'center',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   textAlign: 'left',
   color: 'inherit',
   width: '100%',

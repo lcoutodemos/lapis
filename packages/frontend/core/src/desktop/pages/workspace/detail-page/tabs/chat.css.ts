@@ -35,6 +35,41 @@ export const title = style({
   alignItems: 'center',
 });
 
+export const providerButton = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4px',
+  cursor: 'pointer',
+  borderRadius: 'var(--affine-radius-xs)',
+  padding: '2px 4px',
+  margin: '-2px -4px',
+  fontSize: '14px',
+  fontWeight: 500,
+  color: 'var(--affine-text-secondary-color)',
+  userSelect: 'none',
+  ':hover': {
+    background: 'var(--affine-hover-color)',
+    color: 'var(--affine-text-primary-color)',
+  },
+});
+
+export const modelBadge = style({
+  fontSize: '11px',
+  fontWeight: 400,
+  color: 'var(--affine-text-disable-color)',
+  background: 'var(--affine-hover-color)',
+  borderRadius: 'var(--affine-radius-xs)',
+  padding: '1px 5px',
+  lineHeight: '16px',
+});
+
+export const providerChevron = style({
+  width: '14px',
+  height: '14px',
+  flexShrink: 0,
+  color: 'var(--affine-text-disable-color)',
+});
+
 export const playground = style({
   cursor: 'pointer',
   padding: '2px',

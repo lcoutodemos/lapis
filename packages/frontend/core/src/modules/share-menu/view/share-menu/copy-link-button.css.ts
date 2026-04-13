@@ -22,7 +22,7 @@ export const copyLinkButtonStyle = style({
   padding: '4px 12px',
   height: '30px',
   paddingRight: '6px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   borderRight: 'none',
   borderTopRightRadius: '0',
   borderBottomRightRadius: '0',
@@ -40,7 +40,7 @@ export const copyLinkButtonStyle = style({
 export const copyLinkLabelContainerStyle = style({
   width: '100%',
   borderRight: 'none',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   borderTopRightRadius: '0',
   borderBottomRightRadius: '0',
   position: 'relative',
@@ -81,7 +81,7 @@ export const copyLinkShortcutStyle = style({
 });
 export const copyLinkTriggerStyle = style({
   padding: '4px 12px 4px 8px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   height: '30px',
   borderLeft: 'none',
   borderTopLeftRadius: '0',

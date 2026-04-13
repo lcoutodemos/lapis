@@ -89,7 +89,7 @@ export const tab = style({
   alignItems: 'center',
   color: cssVarV2('tab/fontColor/default'),
   userSelect: 'none',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   position: 'relative',
   ['WebkitAppRegion' as string]: 'no-drag',
   selectors: {

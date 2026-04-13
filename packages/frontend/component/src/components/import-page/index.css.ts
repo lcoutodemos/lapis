@@ -7,7 +7,7 @@ export const importPageContainerStyle = style({
   flexDirection: 'column',
   justifyContent: 'center',
   alignItems: 'center',
-  borderRadius: '12px',
+  borderRadius: 'var(--affine-radius-md)',
   boxShadow: cssVar('popoverShadow'),
   background: cssVar('backgroundOverlayPanelColor'),
   overflow: 'hidden',

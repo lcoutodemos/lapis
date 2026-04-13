@@ -51,7 +51,7 @@ export const stackItem = style({
 });
 export const stackItemContent = style({
   height: 24,
-  borderRadius: 12,
+  borderRadius: 'var(--affine-radius-md)',
   borderWidth: 1,
   borderStyle: 'solid',
   borderColor: cssVarV2.layer.insideBorder.blackBorder,

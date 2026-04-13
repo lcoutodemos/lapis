@@ -53,7 +53,7 @@ export const tagSelectorTrigger = style({
   cursor: 'pointer',
   padding: '0px 2px',
 
-  borderRadius: 100,
+  borderRadius: 'var(--affine-radius-round)',
   border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
 });
 export const tagSelectorTriggerIcon = style({

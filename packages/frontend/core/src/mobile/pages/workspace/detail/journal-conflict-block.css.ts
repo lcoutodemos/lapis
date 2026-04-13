@@ -64,7 +64,7 @@ export const duplicatedTag = style({
   lineHeight: '20px',
   height: 20,
   padding: '0 8px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   color: cssVarV2.toast.iconState.error,
   backgroundColor: cssVarV2.layer.background.error,
   border: `1px solid ${cssVarV2.database.border}`,

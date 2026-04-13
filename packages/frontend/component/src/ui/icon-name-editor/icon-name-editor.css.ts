@@ -4,7 +4,7 @@ import { globalStyle, style } from '@vanilla-extract/css';
 
 export const menuContent = style({
   padding: 4,
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
 });
 
 export const contentRoot = style({
@@ -30,7 +30,7 @@ globalStyle(`${iconPicker} span:has(svg)`, {
 export const iconNamePickerIcon = style({
   flexShrink: 0,
   fontSize: 24,
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   width: 32,
   height: 32,
   border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
@@ -43,7 +43,7 @@ export const iconNamePickerIcon = style({
 
 export const input = style({
   height: 32,
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   width: 0,
   flexGrow: 1,
 });

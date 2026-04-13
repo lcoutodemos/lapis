@@ -5,7 +5,7 @@ import { style } from '@vanilla-extract/css';
 export const migrationDataNotificationContainer = style({
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
   padding: '12px 12px 12px 12px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   margin: '0 24px',
   marginTop: '24px',
   '@container': {

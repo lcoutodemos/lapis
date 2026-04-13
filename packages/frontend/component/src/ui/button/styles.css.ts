@@ -12,7 +12,7 @@ export const dropdownBtn = style({
   fontWeight: 600,
   background: cssVar('backgroundPrimaryColor'),
   border: `1px solid ${cssVar('borderColor')}`,
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   fontSize: cssVar('fontSm'),
   // width: '100%',
   height: '32px',
@@ -52,7 +52,7 @@ export const dropdownWrapper = style({
 });
 
 export const dropdownIcon = style({
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   selectors: {
     [`${dropdownWrapper}:hover &`]: {
       background: cssVar('hoverColor'),

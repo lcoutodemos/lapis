@@ -53,7 +53,7 @@ export const pageInfoDimmed = style({
 export const tableHeaderBacklinksHint = style({
   padding: `0 6px`,
   cursor: 'pointer',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   ':hover': {
     backgroundColor: cssVarV2('layer/background/hoverOverlay'),
   },
@@ -127,7 +127,7 @@ export const propertyActionButton = style({
   fontWeight: 400,
   gap: 6,
   width: '160px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   justifyContent: 'start',
   '@media': {
     print: {

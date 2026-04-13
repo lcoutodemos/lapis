@@ -9,7 +9,7 @@ export const dayCell = style([
     height: 34,
     minWidth: 34,
     padding: 4,
-    borderRadius: 8,
+    borderRadius: 'var(--affine-radius-sm)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

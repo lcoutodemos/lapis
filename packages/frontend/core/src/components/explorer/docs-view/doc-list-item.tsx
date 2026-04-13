@@ -13,6 +13,7 @@ import { useI18n } from '@affine/i18n';
 import track from '@affine/track';
 import {
   AutoTidyUpIcon,
+  MindmapNodeIcon,
   PropertyIcon,
   ResizeTidyUpIcon,
 } from '@blocksuite/icons/rc';
@@ -33,7 +34,7 @@ import * as styles from './doc-list-item.css';
 import { MoreMenuButton, MoreMenuContent } from './more-menu';
 import { CardViewProperties, ListViewProperties } from './properties';
 
-export type DocListItemView = 'list' | 'grid' | 'masonry';
+export type DocListItemView = 'list' | 'grid' | 'masonry' | 'graph';
 
 export const DocListViewIcon = ({
   view,
@@ -43,6 +44,7 @@ export const DocListViewIcon = ({
     list: PropertyIcon,
     grid: ResizeTidyUpIcon,
     masonry: AutoTidyUpIcon,
+    graph: MindmapNodeIcon,
   }[view];
 
   return <Component {...props} />;

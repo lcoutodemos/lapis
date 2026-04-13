@@ -12,7 +12,7 @@ export const dragPreview = style({
   gap: 8,
   padding: '8px 16px 8px 12px',
   background: cssVarV2.layer.background.primary,
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
   fontSize: 14,
 });
@@ -28,7 +28,7 @@ export const listViewRoot = style({
   flexDirection: 'row',
   alignItems: 'center',
   gap: 8,
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   overflow: 'hidden',
   containerName: 'list-view-root',
   containerType: 'size',
@@ -188,7 +188,7 @@ export const cardViewRoot = style({
   flexDirection: 'column',
   gap: 8,
   padding: 16,
-  borderRadius: 12,
+  borderRadius: 'var(--affine-radius-md)',
   backgroundColor: cssVarV2.layer.background.mobile.secondary,
   border: `0.5px solid ${cssVarV2.layer.insideBorder.border}`,
   // TODO: use variable

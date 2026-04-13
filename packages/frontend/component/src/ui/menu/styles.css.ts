@@ -8,7 +8,7 @@ export const bgColor = createVar('bgColor');
 
 export const menuContent = style({
   minWidth: '180px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   padding: '8px',
   fontSize: cssVar('fontSm'),
   fontWeight: '400',
@@ -41,7 +41,7 @@ export const menuItem = style({
   justifyContent: 'space-between',
   gap: 8,
   padding: '4px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   lineHeight: '22px',
   border: 'none',
   outline: 'none',

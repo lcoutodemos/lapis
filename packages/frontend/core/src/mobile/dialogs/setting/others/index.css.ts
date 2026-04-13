@@ -12,7 +12,7 @@ const shineAnimation = keyframes({
 export const hotTag = style({
   background: cssVarV2('chip/tag/red'),
   padding: '0px 8px',
-  borderRadius: 20,
+  borderRadius: 'var(--affine-radius-round)',
   lineHeight: '20px',
   fontSize: 12,
   fontWeight: 500,

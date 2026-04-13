@@ -11,7 +11,7 @@ export const closeIconColor = createVar();
 export const cardWrapper = style({});
 
 export const card = style({
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   boxShadow: cssVar('shadow1'),
   borderWidth: 1,
   borderStyle: 'solid',

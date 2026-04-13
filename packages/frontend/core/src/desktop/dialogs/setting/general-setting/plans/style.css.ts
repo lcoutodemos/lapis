@@ -51,7 +51,7 @@ export const planCard = style({
   backgroundColor: cssVar('backgroundPrimaryColor'),
   minHeight: '426px',
   minWidth: '258px',
-  borderRadius: '16px',
+  borderRadius: 'var(--affine-radius-lg)',
   border: `1px solid ${cssVar('borderColor')}`,
   position: 'relative',
   userSelect: 'none',
@@ -104,7 +104,7 @@ export const proPlanTitle = style({
   backgroundColor: cssVar('brandColor'),
   color: cssVar('white'),
   padding: '0px 6px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   height: '24px',
   display: 'inline-block',
 });
@@ -114,7 +114,7 @@ export const discountLabel = style({
   lineHeight: '20px',
   fontSize: cssVar('fontXs'),
   fontWeight: 500,
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   display: 'inline-block',
   height: '100%',
 });

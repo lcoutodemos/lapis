@@ -29,7 +29,7 @@ export const scrollThumb = style({
   opacity: 0.6,
   overflow: 'hidden',
   height: '4px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   vars: {
     '--radix-scroll-area-thumb-height': '4px',
   },
@@ -73,7 +73,7 @@ export const aiScrollTip = style({
   bottom: 12,
   width: 'var(--setting-modal-content-width)',
   background: cssVar('white'),
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   border: `1px solid ${cssVar('borderColor')}`,
   transition: 'transform 0.36s ease 0.4s, opacity 0.3s ease 0.46s',
   alignItems: 'center',

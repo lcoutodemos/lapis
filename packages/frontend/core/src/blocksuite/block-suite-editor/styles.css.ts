@@ -45,7 +45,7 @@ const titleTagBasic = style({
   fontSize: cssVar('fontH4'),
   fontWeight: 600,
   padding: '0 4px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   marginLeft: '4px',
   lineHeight: '0px',
 });

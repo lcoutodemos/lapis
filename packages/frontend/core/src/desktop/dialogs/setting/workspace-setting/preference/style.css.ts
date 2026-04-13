@@ -27,7 +27,7 @@ export const workspaceLabel = style({
   flexWrap: 'wrap',
   justifyContent: 'center',
   alignItems: 'center',
-  borderRadius: '6px',
+  borderRadius: 'var(--affine-radius-xs)',
   padding: '2px 10px',
   border: `1px solid ${cssVar('white30')}`,
   fontSize: cssVar('fontXs'),
@@ -55,7 +55,7 @@ globalStyle(`${storageProgressWrapper} .storage-progress-desc`, {
 });
 globalStyle(`${storageProgressWrapper} .storage-progress-bar-wrapper`, {
   height: '8px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   backgroundColor: cssVarV2('layer/background/hoverOverlay'),
   overflow: 'hidden',
 });

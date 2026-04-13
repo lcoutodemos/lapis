@@ -21,7 +21,7 @@ export const workbenchSidebar = style({
   selectors: {
     [`&[data-client-border=true]`]: {
       paddingLeft: 8,
-      borderRadius: 6,
+      borderRadius: 'var(--affine-radius-xs)',
     },
     [`&[data-client-border=false]`]: {
       borderLeft: `0.5px solid ${cssVarV2.layer.insideBorder.border}`,

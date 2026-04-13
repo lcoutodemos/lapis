@@ -18,7 +18,7 @@ export const notificationMultimediaStyle = style({
   position: 'relative',
   width: '100%',
   height: '230px',
-  borderRadius: '8px 8px 0 0',
+  borderRadius: 'var(--affine-radius-sm) var(--affine-radius-sm) 0 0',
   overflow: 'hidden',
   marginBottom: '16px',
 });
@@ -30,7 +30,7 @@ globalStyle(`${notificationMultimediaStyle} > *`, {
 });
 export const notificationStyle = style({
   position: 'absolute',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   transition: 'transform 0.3s,opacity 0.3s, height 0.3s',
   transform: 'var(--y)',
   zIndex: 'var(--z-index)',
@@ -105,7 +105,7 @@ export const notificationStyle = style({
     height: '15px',
     left: '0',
     bottom: '100%',
-    borderRadius: '8px',
+    borderRadius: 'var(--affine-radius-sm)',
   },
 });
 export const notificationIconStyle = style({
@@ -124,7 +124,7 @@ export const hasMediaStyle = style({
   paddingTop: '0',
   paddingBottom: '16px',
   width: '380px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   boxShadow: cssVar('shadow1'),
   border: `1px solid ${cssVar('borderColor')}`,
   background: cssVar('white'),
@@ -137,7 +137,7 @@ export const notificationContentStyle = style({
   paddingTop: '16px',
   paddingBottom: '16px',
   width: '380px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   boxShadow: cssVar('shadow1'),
   border: `1px solid ${cssVar('black10')}`,
   background: cssVar('white'),
@@ -189,7 +189,7 @@ export const closeButtonWithMediaStyle = style({
   justifyContent: 'center',
   alignItems: 'center',
   cursor: 'pointer',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   color: cssVar('pureBlack'),
   ':hover': {
     background: cssVar('hoverColor'),
@@ -202,7 +202,7 @@ export const undoButtonStyle = style({
   fontSize: cssVar('fontSm'),
   background: cssVar('hoverColor'),
   padding: '3px 6px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   color: cssVar('processingColor'),
   cursor: 'pointer',
 });
@@ -227,35 +227,35 @@ export const progressBarStyle = style({
 });
 export const darkSuccessStyle = style({
   background: cssVar('successColor'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const darkInfoStyle = style({
   background: cssVar('processingColor'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const darkErrorStyle = style({
   background: cssVar('errorColor'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const darkWarningStyle = style({
   background: cssVar('warningColor'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const lightSuccessStyle = style({
   background: cssVar('backgroundSuccessColor'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const lightInfoStyle = style({
   background: cssVar('backgroundProcessingColor'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const lightErrorStyle = style({
   background: cssVar('backgroundErrorColor'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const lightWarningStyle = style({
   background: cssVar('backgroundWarningColor'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const darkColorStyle = style({
   color: cssVar('pureWhite'),

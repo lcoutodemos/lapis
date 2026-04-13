@@ -16,7 +16,7 @@ export const tipsContainer = style({
   padding: '8px',
   color: cssVarV2('text/secondary'),
   fontSize: cssVar('fontSm'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   backgroundColor: cssVarV2('layer/background/tertiary'),
 });
 
@@ -58,7 +58,7 @@ export const copyButton = style({
   gap: '4px',
   cursor: 'pointer',
   padding: '4px 12px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   width: '100%',
   maxWidth: '300px',
 });

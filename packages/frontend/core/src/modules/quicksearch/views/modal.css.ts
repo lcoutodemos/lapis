@@ -43,7 +43,7 @@ export const modalContent = style({
   // height: 530,
   backgroundColor: cssVar('backgroundOverlayPanelColor'),
   boxShadow: cssVar('cmdShadow'),
-  borderRadius: '12px',
+  borderRadius: 'var(--affine-radius-md)',
   maxWidth: 'calc(100vw - 50px)',
   minWidth: 480,
   // minHeight: 420,

@@ -20,7 +20,7 @@ export const progress = style({
   height: progressHeight,
   flex: 1,
   background: cssVarV2('layer/background/hoverOverlay'),
-  borderRadius: 5,
+  borderRadius: 'var(--affine-radius-xs)',
   position: 'relative',
 });
 
@@ -58,7 +58,7 @@ export const label = style({
 export const indicator = style({
   height: '100%',
   width: '100%',
-  borderRadius: 5,
+  borderRadius: 'var(--affine-radius-xs)',
   background: cssVarV2('toast/iconState/regular'),
   transition: 'background 0.2s ease-in-out',
   selectors: {

@@ -23,7 +23,7 @@ export const shortcutKey = style({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '0 6px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   background: cssVar('backgroundTertiaryColor'),
   fontSize: cssVar('fontXs'),
   selectors: {

@@ -28,7 +28,7 @@ export const connectDesc = style({
 
 export const connectInput = style({
   height: 28,
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
 });
 export const inputErrorMsg = style({
   fontSize: 10,

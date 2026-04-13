@@ -40,7 +40,7 @@ export const mobileStyles = {
     display: 'flex',
     flexDirection: 'column',
     padding: '12px 0 !important',
-    borderRadius: 22,
+    borderRadius: 'var(--affine-radius-round)',
   }),
   description: style([
     bodyRegular,
@@ -84,7 +84,7 @@ export const mobileStyles = {
     {
       width: '100%',
       height: 44,
-      borderRadius: 8,
+      borderRadius: 'var(--affine-radius-sm)',
       fontSize: 17,
       fontWeight: 400,
       selectors: {

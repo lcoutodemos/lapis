@@ -27,7 +27,7 @@ export const switchStyle = style({
   height: switchHeightVar,
   width: switchWidthVar,
   background: cssVar('toggleDisableBackgroundColor'),
-  borderRadius: '37px',
+  borderRadius: 'var(--affine-radius-round)',
   transition: '200ms all',
   selectors: {
     '&:before': {

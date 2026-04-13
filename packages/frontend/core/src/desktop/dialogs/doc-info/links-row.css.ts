@@ -4,7 +4,7 @@ import { globalStyle, style } from '@vanilla-extract/css';
 
 export const wrapper = style({
   width: '100%',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   color: cssVarV2('text/primary'),
   display: 'flex',
   flexDirection: 'row',

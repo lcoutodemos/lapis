@@ -166,7 +166,7 @@ export const modalContent = style({
   position: 'relative',
   backgroundColor: cssVar('backgroundOverlayPanelColor'),
   boxShadow: cssVar('popoverShadow'),
-  borderRadius: '12px',
+  borderRadius: 'var(--affine-radius-md)',
   // :focus-visible will set outline
   outline: 'none',
 

@@ -85,7 +85,7 @@ export const treeNode = style({
   alignItems: 'center',
   gap: 8,
   padding: '8px 16px',
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   color: cssVar('textPrimaryColor'),
   cursor: 'pointer',
   selectors: {
@@ -153,7 +153,7 @@ export const colorCellColor = style({
   flexShrink: 0,
   width: 16,
   height: 16,
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   position: 'relative',
   ':before': {
     width: 16,
@@ -174,7 +174,7 @@ export const colorCellColor = style({
 });
 export const colorCellValue = style({
   padding: '4px 8px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   background: 'rgba(125,125,125,0.1)',
 });
 export const colorCellInput = style({

@@ -12,7 +12,7 @@ export const input = style({
   width: '100%',
   height: 42,
   border: '1px solid ' + cssVarV2('input/border/active'),
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   padding: '0 4px',
 });
 export const desc = style([
@@ -30,6 +30,6 @@ export const done = style([
   bodyRegular,
   {
     width: '100%',
-    borderRadius: 8,
+    borderRadius: 'var(--affine-radius-sm)',
   },
 ]);

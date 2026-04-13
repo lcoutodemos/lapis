@@ -19,7 +19,7 @@ export const emptyChildren = style({
   selectors: {
     '&[data-dragged-over="true"]': {
       background: cssVarV2('layer/background/hoverOverlay'),
-      borderRadius: '4px',
+      borderRadius: 'var(--affine-radius-xs)',
     },
   },
 });

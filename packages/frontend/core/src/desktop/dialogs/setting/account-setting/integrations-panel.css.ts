@@ -43,7 +43,7 @@ export const accountRow = style({
   justifyContent: 'space-between',
   gap: 16,
   padding: '12px 16px',
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
   background: cssVarV2.layer.background.primary,
   transition: 'background-color 0.15s ease, border-color 0.15s ease',
@@ -71,7 +71,7 @@ export const accountInfo = style({
 export const accountIcon = style({
   width: 32,
   height: 32,
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   background: cssVarV2.layer.background.secondary,
   display: 'flex',
   alignItems: 'center',
@@ -113,7 +113,7 @@ export const accountStatus = style({
 export const statusDot = style({
   width: 6,
   height: 6,
-  borderRadius: 999,
+  borderRadius: 'var(--affine-radius-round)',
   background: cssVarV2.status.error,
 });
 

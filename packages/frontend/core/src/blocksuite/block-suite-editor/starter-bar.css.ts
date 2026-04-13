@@ -29,7 +29,7 @@ export const badge = style({
   alignItems: 'center',
   gap: 4,
   padding: '2px 8px',
-  borderRadius: 40,
+  borderRadius: 'var(--affine-radius-round)',
   backgroundColor: cssVarV2.layer.background.secondary,
   cursor: 'pointer',
   userSelect: 'none',

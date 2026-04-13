@@ -74,14 +74,14 @@ export const userPlanButton = style({
   color: cssVar('pureWhite'),
   backgroundColor: cssVar('brandColor'),
   padding: '0 4px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   justifyContent: 'center',
   alignItems: 'center',
 });
 
 export const accountCard = style({
   padding: '4px 8px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   userSelect: 'none',
   display: 'flex',
   columnGap: '10px',

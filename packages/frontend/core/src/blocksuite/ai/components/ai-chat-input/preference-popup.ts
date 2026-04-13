@@ -29,7 +29,15 @@ import { ShadowlessElement } from '@blocksuite/std';
 import { autoPlacement, offset, shift } from '@floating-ui/dom';
 import { computed } from '@preact/signals-core';
 import { css, html } from 'lit';
-import { property } from 'lit/decorators.js';
+import { property, state } from 'lit/decorators.js';
+
+type PermissionMode = 'default' | 'ask' | 'allow-all';
+
+const PERMISSION_MODE_LABELS: Record<PermissionMode, string> = {
+  default: 'Default',
+  ask: 'Ask each time',
+  'allow-all': 'Allow all',
+};
 
 const modelSubMenuMiddleware = [
   autoPlacement({ allowedPlacements: ['right-start', 'left-start'] }),
@@ -125,6 +133,45 @@ export class ChatInputPreference extends SignalWatcher(
   @property({ attribute: false })
   accessor onAISubscribe!: () => Promise<void>;
 
+  @state()
+  accessor _permissionMode: PermissionMode = 'default';
+
+  @state()
+  accessor _isElectron: boolean = false;
+
+  connectedCallback() {
+    super.connectedCallback();
+    this._detectElectronAndLoadOptions();
+  }
+
+  private _detectElectronAndLoadOptions() {
+    const cliApis = (window as any).__apis?.aiCli as
+      | {
+          getRuntimeOptions?: () => Promise<{ permissionMode: PermissionMode }>;
+        }
+      | undefined;
+    if (!cliApis?.getRuntimeOptions) return;
+    this._isElectron = true;
+    cliApis
+      .getRuntimeOptions()
+      .then(opts => {
+        this._permissionMode = opts.permissionMode ?? 'default';
+      })
+      .catch(() => {});
+  }
+
+  private _setPermissionMode(mode: PermissionMode) {
+    this._permissionMode = mode;
+    const cliApis = (window as any).__apis?.aiCli as
+      | {
+          updateRuntimeOptions?: (opts: {
+            permissionMode: PermissionMode;
+          }) => Promise<unknown>;
+        }
+      | undefined;
+    cliApis?.updateRuntimeOptions?.({ permissionMode: mode })?.catch(() => {});
+  }
+
   model = computed(() => {
     const modelId = this.aiModelService.modelId.value;
     const activeModel = this.aiModelService.models.value.find(
@@ -141,6 +188,7 @@ export class ChatInputPreference extends SignalWatcher(
     if (!(element instanceof HTMLElement)) return;
     const modelItems = [];
     const searchItems = [];
+    const approvalItems = [];
 
     // model switch
     modelItems.push(
@@ -216,6 +264,37 @@ export class ChatInputPreference extends SignalWatcher(
       })
     );
 
+    // Approval mode section — only shown in Electron/CLI mode
+    if (this._isElectron) {
+      const modes: PermissionMode[] = ['default', 'ask', 'allow-all'];
+      approvalItems.push(
+        menu.subMenu({
+          name: 'Approval',
+          prefix: LockIcon(),
+          middleware: modelSubMenuMiddleware,
+          postfix: html`
+            <span class="ai-active-model-name">
+              ${PERMISSION_MODE_LABELS[this._permissionMode]}
+            </span>
+          `,
+          options: {
+            items: modes.map(mode =>
+              menu.action({
+                name: PERMISSION_MODE_LABELS[mode],
+                prefix: html`
+                  <div class="ai-model-prefix">
+                    ${this._permissionMode === mode ? DoneIcon() : undefined}
+                  </div>
+                `,
+                select: () => this._setPermissionMode(mode),
+                class: { 'preference-action': true },
+              })
+            ),
+          },
+        })
+      );
+    }
+
     popMenu(popupTargetFromElement(element), {
       options: {
         items: [
@@ -225,6 +304,9 @@ export class ChatInputPreference extends SignalWatcher(
           menu.group({
             items: [...searchItems],
           }),
+          ...(approvalItems.length
+            ? [menu.group({ items: approvalItems })]
+            : []),
         ],
         testId: 'chat-input-preference',
       },

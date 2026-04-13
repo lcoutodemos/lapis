@@ -8,7 +8,7 @@ export const pricingPlan = style({
   padding: '12px',
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
   backgroundColor: cssVarV2('layer/white'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   gap: '18px',
   marginBottom: '24px',
 });

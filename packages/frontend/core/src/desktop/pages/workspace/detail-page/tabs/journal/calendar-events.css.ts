@@ -16,7 +16,7 @@ export const event = style({
   gap: 8,
   alignItems: 'center',
   padding: '5px 4px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   cursor: 'pointer',
   selectors: {
     '&:hover': {
@@ -92,7 +92,7 @@ export const nameTooltipIcon = style({
     content: '',
     width: 14,
     height: 14,
-    borderRadius: 7,
+    borderRadius: 'var(--affine-radius-xs)',
     backgroundColor: 'currentColor',
     display: 'block',
   },

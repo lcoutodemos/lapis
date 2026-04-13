@@ -23,7 +23,7 @@ const slideUpAndFade = keyframes({
 export const root = style({
   display: 'flex',
   alignItems: 'center',
-  borderRadius: '10px',
+  borderRadius: 'var(--affine-radius-sm)',
   padding: '4px',
   border: `1px solid ${cssVar('borderColor')}`,
   boxShadow: cssVar('menuShadow'),
@@ -59,7 +59,7 @@ export const item = style({
 export const button = style([
   item,
   {
-    borderRadius: '8px',
+    borderRadius: 'var(--affine-radius-sm)',
     ':hover': {
       background: cssVar('hoverColor'),
     },

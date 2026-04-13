@@ -17,7 +17,7 @@ export const root = style({
   alignItems: 'center',
   justifyContent: 'space-between',
   padding: '0 8px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   selectors: {
     [`&[data-collapsible="true"]`]: {
       cursor: 'pointer',

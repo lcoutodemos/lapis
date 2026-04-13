@@ -10,8 +10,9 @@ import type { WebContents } from 'electron';
 import type { AFFiNECapability } from '../affine-capability/index';
 import type { SessionState } from './control-plane';
 import { CLIControlPlane } from './control-plane';
+import type { PermissionMode, RuntimeOptions } from './transports/types';
 
-export type { SessionState };
+export type { RuntimeOptions, SessionState };
 
 export class CLIBridge {
   private readonly controlPlane: CLIControlPlane;
@@ -62,6 +63,17 @@ export class CLIBridge {
 
   getStatus(): SessionState {
     return this.controlPlane.getState();
+  }
+
+  getRuntimeOptions(): RuntimeOptions {
+    return this.controlPlane.getRuntimeOptions();
+  }
+
+  updateRuntimeOptions(opts: {
+    model?: string | null;
+    permissionMode?: PermissionMode;
+  }): void {
+    this.controlPlane.updateRuntimeOptions(opts);
   }
 
   destroy(): void {

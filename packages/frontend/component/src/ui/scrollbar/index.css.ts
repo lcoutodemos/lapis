@@ -61,14 +61,14 @@ export const mobileScrollbar = style({
 export const TableScrollbar = style({
   marginTop: '60px',
   height: 'calc(100% - 120px)',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
 });
 export const scrollbarThumb = style({
   position: 'relative',
   background: cssVar('dividerColor'),
   width: '50%',
   overflow: 'hidden',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   ':hover': {
     background: cssVar('iconColor'),
   },

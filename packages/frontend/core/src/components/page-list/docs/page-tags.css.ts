@@ -89,7 +89,7 @@ export const tagInline = style([
   tagInnerWrapper,
   {
     fontSize: 'inherit',
-    borderRadius: '10px',
+    borderRadius: 'var(--affine-radius-sm)',
     columnGap: '4px',
     borderWidth: '1px',
     borderStyle: 'solid',

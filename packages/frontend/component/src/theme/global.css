@@ -7,6 +7,20 @@
 :root {
   --noise-background: url(./noise.avif);
   text-autospace: normal;
+
+  /* ── Radius scale ────────────────────────────────────────────────────
+   * Change these to restyle every rounded corner in the product at once.
+   * xs  → chips, badges, tooltips, tags, small indicators
+   * sm  → buttons, inputs, menus, notifications, popovers, cards
+   * md  → modals, panels, date-pickers, larger overlays
+   * lg  → hero cards, large surface panels
+   * round → pill-shaped toggles, switches, full-pill buttons
+   * ────────────────────────────────────────────────────────────────── */
+  --affine-radius-xs: 4px;
+  --affine-radius-sm: 8px;
+  --affine-radius-md: 12px;
+  --affine-radius-lg: 16px;
+  --affine-radius-round: 100px;
 }
 
 html,

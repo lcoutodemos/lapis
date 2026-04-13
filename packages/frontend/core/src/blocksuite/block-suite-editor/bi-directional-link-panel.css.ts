@@ -37,7 +37,7 @@ export const title = style({
 
 export const showButton = style({
   height: '28px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   border: '1px solid ' + cssVar('--affine-border-color'),
   backgroundColor: cssVarV2('button/secondary'),
   textAlign: 'center',
@@ -65,7 +65,7 @@ export const link = style({
   alignItems: 'center',
   gap: '4px',
   whiteSpace: 'nowrap',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   ':hover': {
     backgroundColor: cssVarV2('layer/background/hoverOverlay'),
   },
@@ -94,7 +94,7 @@ export const linkPreviewContainer = style({
 export const linkPreview = style({
   cursor: 'default',
   border: `0.5px solid ${cssVarV2('backlinks/blockBorder')}`,
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   padding: '8px',
   color: cssVarV2('text/primary'),
   vars: {

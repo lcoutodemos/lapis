@@ -9,7 +9,7 @@ export const layout = style({
   selectors: {
     '&[data-is-macos-electron="true"]': {
       margin: '8px',
-      borderRadius: '8px',
+      borderRadius: 'var(--affine-radius-sm)',
       height: 'calc(100vh - 16px)',
     },
   },

@@ -6,7 +6,7 @@ export const blockCard = style({
   padding: '8px 12px',
   color: cssVar('textPrimaryColor'),
   backgroundColor: cssVar('white80'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   userSelect: 'none',
   cursor: 'pointer',
   textAlign: 'start',

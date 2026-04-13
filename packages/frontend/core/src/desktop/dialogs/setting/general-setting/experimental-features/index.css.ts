@@ -22,7 +22,7 @@ export const promptWarning = style({
   justifyContent: 'center',
   gap: 14,
   padding: 10,
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const promptWarningTitle = style({
   color: cssVar('errorColor'),

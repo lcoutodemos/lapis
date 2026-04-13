@@ -4,7 +4,7 @@ import { style } from '@vanilla-extract/css';
 export const inputStyle = style({
   padding: '4px',
   gap: '4px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   height: '30px',
 });
 

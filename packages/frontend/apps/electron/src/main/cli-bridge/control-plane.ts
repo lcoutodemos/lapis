@@ -19,7 +19,13 @@ import { logger } from '../logger';
 import type { PermissionRequest } from './permission-handler';
 import { PermissionHandler } from './permission-handler';
 import { ClaudeCodeTransport } from './transports/claude-code';
-import type { CLIEvent, TransportStartOptions } from './transports/types';
+import type {
+  CLIEvent,
+  CLIModel,
+  PermissionMode,
+  RuntimeOptions,
+  TransportStartOptions,
+} from './transports/types';
 
 const MAX_QUEUE_DEPTH = 32;
 
@@ -53,6 +59,27 @@ export interface SessionState {
 }
 
 export class CLIControlPlane {
+  static readonly AVAILABLE_MODELS: CLIModel[] = [
+    {
+      id: 'claude-opus-4-6',
+      label: 'Claude Opus 4.6',
+      category: 'Claude',
+      version: 'Opus 4.6',
+    },
+    {
+      id: 'claude-sonnet-4-6',
+      label: 'Claude Sonnet 4.6',
+      category: 'Claude',
+      version: 'Sonnet 4.6',
+    },
+    {
+      id: 'claude-haiku-4-5-20251001',
+      label: 'Claude Haiku 4.5',
+      category: 'Claude',
+      version: 'Haiku 4.5',
+    },
+  ];
+
   private readonly transport: ClaudeCodeTransport;
   private readonly permissionHandler: PermissionHandler;
 
@@ -63,6 +90,10 @@ export class CLIControlPlane {
   private startedAt = 0;
   private lastActivityAt = 0;
   private currentRequestId: string | null = null;
+
+  // Runtime user preferences
+  private selectedModel: string | null = null;
+  private permissionMode: PermissionMode = 'default';
 
   private readonly queue: QueuedRequest[] = [];
   private readonly inflightRequestIds = new Set<string>();
@@ -108,6 +139,30 @@ export class CLIControlPlane {
       queueDepth: this.queue.length,
       hookPort: this.hookPort,
     };
+  }
+
+  /** Current CLI runtime options (models, selected model, permission mode) */
+  getRuntimeOptions(): RuntimeOptions {
+    return {
+      models: CLIControlPlane.AVAILABLE_MODELS,
+      selectedModel: this.selectedModel,
+      permissionMode: this.permissionMode,
+    };
+  }
+
+  /** Update runtime preferences — applied on the next prompt spawn */
+  updateRuntimeOptions(
+    opts: Partial<{ model: string | null; permissionMode: PermissionMode }>
+  ): void {
+    if (opts.model !== undefined) {
+      this.selectedModel = opts.model;
+      logger.info('[control-plane] model set to', opts.model);
+    }
+    if (opts.permissionMode !== undefined) {
+      this.permissionMode = opts.permissionMode;
+      this.permissionHandler.setPermissionMode(opts.permissionMode);
+      logger.info('[control-plane] permissionMode set to', opts.permissionMode);
+    }
   }
 
   /**
@@ -216,7 +271,8 @@ export class CLIControlPlane {
     const opts: TransportStartOptions = {
       sessionId: this.sessionId ?? undefined,
       workingDir: this.config.workingDir,
-      model: this.config.model,
+      // selectedModel takes precedence over the static config default
+      model: this.selectedModel ?? this.config.model,
       localServerPort: this.config.localServerPort,
       maxTurns: this.config.maxTurns ?? 50,
       hookPort: this.hookPort,

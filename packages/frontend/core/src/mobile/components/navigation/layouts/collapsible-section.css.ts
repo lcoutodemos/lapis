@@ -18,7 +18,7 @@ export const triggerRoot = style({
   alignItems: 'center',
   justifyContent: 'space-between',
   padding: '0 16px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
 });
 export const triggerLabel = style([
   headlineRegular,

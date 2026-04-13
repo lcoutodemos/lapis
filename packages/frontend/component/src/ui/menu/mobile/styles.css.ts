@@ -14,7 +14,7 @@ export const mobileMenuModal = style({
       backgroundColor: cssVarV2('layer/background/overlayPanel'),
       boxShadow: cssVar('menuShadow'),
       userSelect: 'none',
-      borderRadius: 24,
+      borderRadius: 'var(--affine-radius-round)',
       minHeight: 0,
       padding: 0,
       overflow: 'hidden',

@@ -21,7 +21,7 @@ globalStyle(`${storageProgressWrapper} .storage-progress-desc`, {
 });
 globalStyle(`${storageProgressWrapper} .storage-progress-bar-wrapper`, {
   height: '8px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   backgroundColor: cssVarV2('layer/background/hoverOverlay'),
   overflow: 'hidden',
 });
@@ -62,7 +62,7 @@ export const blobManagementContainer = style({
   flexDirection: 'column',
   gap: '12px',
   padding: '12px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   background: cssVarV2('layer/background/primary'),
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
 });
@@ -74,7 +74,7 @@ export const blobPreviewGrid = style({
 });
 
 export const blobCard = style({
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   overflow: 'hidden',
   position: 'relative',
   userSelect: 'none',
@@ -108,7 +108,7 @@ export const blobPreview = style({
   width: '100%',
   overflow: 'hidden',
   aspectRatio: '1',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   padding: 6,
   backgroundColor: cssVarV2('layer/background/secondary'),
   display: 'flex',

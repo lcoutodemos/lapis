@@ -19,7 +19,7 @@ export const searchInput = style({
   width: 0,
   flexGrow: 1,
   height: `32px !important`,
-  borderRadius: `4px !important`,
+  borderRadius: `var(--affine-radius-xs) !important`,
   gap: `0px !important`,
 });
 

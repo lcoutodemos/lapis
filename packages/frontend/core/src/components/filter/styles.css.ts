@@ -11,7 +11,7 @@ export const container = style({
 export const filterItemStyle = style({
   display: 'flex',
   border: `1px solid ${cssVar('borderColor')}`,
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   background: cssVar('white'),
   padding: '4px 8px',
   gap: '4px',

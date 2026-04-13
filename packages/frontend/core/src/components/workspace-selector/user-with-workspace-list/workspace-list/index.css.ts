@@ -12,7 +12,7 @@ export const workspaceServer = style({
 });
 export const workspaceServerIcon = style({
   border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   color: cssVarV2.icon.primary,
   fontSize: 18,
   width: 30,
@@ -84,7 +84,7 @@ export const signInMenuItemContent = style({
 export const signInIconWrapper = style({
   width: 30,
   height: 30,
-  borderRadius: 6,
+  borderRadius: 'var(--affine-radius-xs)',
   border: `1px solid ${cssVarV2.tab.divider.divider}`,
   fontSize: 20,
   color: cssVarV2.icon.primary,

@@ -7,7 +7,7 @@ export const badge = style({
   minWidth: '16px',
   height: '16px',
   padding: '0px 4px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   fontSize: '12px',
   textAlign: 'center',
   lineHeight: '16px',

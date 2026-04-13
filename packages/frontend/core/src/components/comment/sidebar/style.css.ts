@@ -211,7 +211,7 @@ export const collapsedReplies = style({
   cursor: 'pointer',
   height: '28px',
   paddingLeft: '42px',
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   selectors: {
     '&:hover': {
       backgroundColor: cssVarV2('layer/background/hoverOverlay'),

@@ -34,7 +34,7 @@ export const card = style({
   padding: '12px',
   display: 'flex',
   alignItems: 'center',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   backgroundColor: cssVar('backgroundSecondaryColor'),
   minHeight: '114px',
   position: 'relative',

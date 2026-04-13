@@ -26,7 +26,7 @@ export const hoverNavWrapperStyle = style({
       marginTop: '52px',
       marginLeft: '4px',
       boxShadow: cssVar('--affine-popover-shadow'),
-      borderRadius: '6px',
+      borderRadius: 'var(--affine-radius-xs)',
     },
     '&[data-is-floating="true"][data-is-electron="true"]': {
       height: '100%',

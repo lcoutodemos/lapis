@@ -42,7 +42,7 @@ export const prefixIcon = style({
     content: '""',
     width: 12,
     height: 12,
-    borderRadius: 6,
+    borderRadius: 'var(--affine-radius-xs)',
     backgroundColor: 'currentColor',
   },
 });

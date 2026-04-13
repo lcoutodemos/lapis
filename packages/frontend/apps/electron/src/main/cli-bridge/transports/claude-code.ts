@@ -28,7 +28,8 @@ const buildSystemHint = (port: number): string =>
   POST /search         {"query":"…","limit":10}        search docs (JSON)
   POST /docs/:id/apply {"markdown":"…","reason":"…"}   write doc — read first, send full markdown
   POST /docs           {"title":"…","content":"…"}     create doc
-Writes via /apply are immediately visible in the editor. Never emit markdown expecting it to be auto-applied.`;
+Writes via /apply are immediately visible in the editor. Never emit markdown expecting it to be auto-applied.
+After any task — whether using tools or not — always write a brief chat reply (1-3 sentences) summarising what you did or answering the question directly.`;
 
 export class ClaudeCodeTransport implements ITransport {
   /** Path to the settings file we write before each session */
@@ -246,6 +247,14 @@ export class ClaudeCodeTransport implements ITransport {
     let wakeUp: (() => void) | null = null;
     let ended = false;
 
+    // Per-turn accumulator: tracks tool_use blocks by their stream index so
+    // we can reconstruct the full input JSON from incremental input_json_delta
+    // fragments. Keyed by the 'index' field Claude Code emits on every event.
+    const pendingBlocks = new Map<
+      number,
+      { toolId: string; toolName: string; json: string }
+    >();
+
     const push = (event: CLIEvent) => {
       queue.push(event);
       wakeUp?.();
@@ -262,7 +271,7 @@ export class ClaudeCodeTransport implements ITransport {
         buffer = buffer.slice(newlineIdx + 1);
         if (!line) continue;
         logger.debug('[claude-code] stdout line', line.slice(0, 200));
-        const event = this.parseLine(line);
+        const event = this.parseLine(line, pendingBlocks);
         if (event) push(event);
       }
     };
@@ -271,7 +280,7 @@ export class ClaudeCodeTransport implements ITransport {
     stdout.once('end', () => {
       // Flush any remaining buffer
       if (buffer.trim()) {
-        const event = this.parseLine(buffer.trim());
+        const event = this.parseLine(buffer.trim(), pendingBlocks);
         if (event) push(event);
       }
       ended = true;
@@ -302,7 +311,13 @@ export class ClaudeCodeTransport implements ITransport {
     }
   }
 
-  private parseLine(line: string): CLIEvent | null {
+  private parseLine(
+    line: string,
+    pendingBlocks: Map<
+      number,
+      { toolId: string; toolName: string; json: string }
+    >
+  ): CLIEvent | null {
     let raw: Record<string, unknown>;
     try {
       raw = JSON.parse(line);
@@ -340,6 +355,7 @@ export class ClaudeCodeTransport implements ITransport {
           | undefined;
         if (!se) return null;
         logger.debug('[claude-code] stream subevent', { type: se['type'] });
+        const blockIndex = typeof se['index'] === 'number' ? se['index'] : -1;
 
         // Text streaming
         if (
@@ -352,18 +368,54 @@ export class ClaudeCodeTransport implements ITransport {
           };
         }
 
-        // Tool call starts
+        // Tool call: register block start, accumulate input in subsequent deltas.
+        // We do NOT emit yet — wait for content_block_stop so we have the full input.
         if (
           se['type'] === 'content_block_start' &&
           (se['content_block'] as any)?.type === 'tool_use'
         ) {
           const block = se['content_block'] as any;
-          return {
-            type: 'tool_call',
-            toolName: String(block.name ?? ''),
-            toolId: String(block.id ?? ''),
-            input: block.input,
-          };
+          if (blockIndex >= 0) {
+            pendingBlocks.set(blockIndex, {
+              toolId: String(block.id ?? ''),
+              toolName: String(block.name ?? ''),
+              json: '',
+            });
+          }
+          return null; // defer until input is complete
+        }
+
+        // Accumulate streaming input JSON fragments
+        if (
+          se['type'] === 'content_block_delta' &&
+          (se['delta'] as any)?.type === 'input_json_delta'
+        ) {
+          const pending =
+            blockIndex >= 0 ? pendingBlocks.get(blockIndex) : null;
+          if (pending) {
+            pending.json += String((se['delta'] as any).partial_json ?? '');
+          }
+          return null;
+        }
+
+        // Block complete — emit tool_call with the fully assembled input
+        if (se['type'] === 'content_block_stop' && blockIndex >= 0) {
+          const pending = pendingBlocks.get(blockIndex);
+          if (pending) {
+            pendingBlocks.delete(blockIndex);
+            let input: unknown = {};
+            try {
+              input = pending.json ? JSON.parse(pending.json) : {};
+            } catch {
+              input = {};
+            }
+            return {
+              type: 'tool_call',
+              toolName: pending.toolName,
+              toolId: pending.toolId,
+              input,
+            };
+          }
         }
 
         return null;

@@ -68,7 +68,7 @@ export const metrics = style({
 export const metricCard = style({
   minWidth: '0',
   flex: 1,
-  borderRadius: '10px',
+  borderRadius: 'var(--affine-radius-sm)',
   border: `1px solid ${cssVar('borderColor')}`,
   backgroundColor: cssVar('backgroundPrimaryColor'),
   padding: '8px 10px',
@@ -93,7 +93,7 @@ export const metricValue = style({
 
 export const chartContainer = style({
   height: '228px',
-  borderRadius: '12px',
+  borderRadius: 'var(--affine-radius-md)',
   border: `1px solid ${cssVar('borderColor')}`,
   backgroundColor: cssVar('backgroundPrimaryColor'),
   padding: '10px 10px 8px 10px',
@@ -130,7 +130,7 @@ export const legendDot = style({
 
 export const tooltip = style({
   minWidth: '160px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   border: `1px solid ${cssVar('borderColor')}`,
   backgroundColor: cssVar('backgroundPrimaryColor'),
   boxShadow: cssVar('shadow2'),
@@ -161,7 +161,7 @@ export const tooltipValue = style({
 });
 
 export const emptyState = style({
-  borderRadius: '10px',
+  borderRadius: 'var(--affine-radius-sm)',
   border: `1px dashed ${cssVar('borderColor')}`,
   color: cssVar('textSecondaryColor'),
   fontSize: cssVar('fontSm'),
@@ -184,7 +184,7 @@ export const viewerRow = style({
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: '8px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   padding: '6px 8px',
   selectors: {
     '&:hover': {

@@ -3,7 +3,7 @@ import { style } from '@vanilla-extract/css';
 export const placeholderButton = style({
   padding: '8px 18px',
   border: `1px solid ${cssVar('borderColor')}`,
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   display: 'flex',
   alignItems: 'center',
   gap: 4,
@@ -17,7 +17,7 @@ export const placeholderButton = style({
 });
 export const button = style({
   userSelect: 'none',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   cursor: 'pointer',
   ':hover': {
     backgroundColor: cssVar('hoverColor'),
@@ -29,7 +29,7 @@ export const headerCreateNewButton = style({
 export const headerCreateNewCollectionIconButton = style({
   width: '30px',
   height: '30px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const headerCreateNewButtonHidden = style({
   opacity: 0,

@@ -45,7 +45,7 @@ export const tagsEditorSelectedTags = style({
   minHeight: 42,
   selectors: {
     [`${tagsEditorRootMobile} &`]: {
-      borderRadius: 12,
+      borderRadius: 'var(--affine-radius-md)',
       paddingBottom: '10px',
       backgroundColor: cssVarV2('layer/background/primary'),
     },
@@ -112,7 +112,7 @@ export const tagSelectorTagsScrollContainer = style({
   gap: '8px',
   selectors: {
     [`${tagsEditorRootMobile} &`]: {
-      borderRadius: 12,
+      borderRadius: 'var(--affine-radius-md)',
       backgroundColor: cssVarV2('layer/background/primary'),
       gap: 0,
       padding: 4,
@@ -129,7 +129,7 @@ export const tagSelectorItem = style({
   height: '34px',
   gap: 8,
   cursor: 'pointer',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   selectors: {
     '&[data-focused=true]': {
       backgroundColor: cssVar('hoverColor'),

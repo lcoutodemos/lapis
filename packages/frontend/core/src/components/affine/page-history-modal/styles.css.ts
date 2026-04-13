@@ -49,7 +49,7 @@ export const previewContainer = style({
   position: 'absolute',
   top: 0,
   left: 40,
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   overflow: 'hidden',
   boxShadow: cssVar('shadow3'),
   height: '200%',
@@ -112,7 +112,7 @@ export const previewHeaderTimestamp = style({
   color: cssVar('textSecondaryColor'),
   backgroundColor: cssVar('backgroundSecondaryColor'),
   padding: '0 10px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   fontSize: cssVar('fontXs'),
 });
 export const editor = style({
@@ -185,7 +185,7 @@ export const historyItemGroupTitle = style({
   display: 'flex',
   alignItems: 'center',
   padding: '0 12px 0 4px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   whiteSpace: 'nowrap',
   fontSize: cssVar('fontXs'),
   color: cssVarV2('text/secondary'),
@@ -201,7 +201,7 @@ export const historyItemGroupTitle = style({
 export const historyItem = style([
   rowWrapper,
   {
-    borderRadius: 4,
+    borderRadius: 'var(--affine-radius-xs)',
     display: 'flex',
     gap: 4,
     flexDirection: 'column',
@@ -215,7 +215,7 @@ export const historyItem = style([
 
 export const historyItemTimestamp = style({
   color: cssVarV2('text/primary'),
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   fontSize: cssVar('fontXs'),
   fontWeight: 500,
   display: 'flex',
@@ -316,7 +316,7 @@ export const planPromptWrapper = style({
 });
 export const planPrompt = style({
   gap: 6,
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   flexDirection: 'column',
   padding: 10,
   fontSize: cssVar('fontXs'),

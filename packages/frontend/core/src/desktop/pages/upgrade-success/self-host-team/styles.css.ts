@@ -26,7 +26,7 @@ export const licenseKeyContainer = style({
   justifyContent: 'space-between',
   alignItems: 'center',
   backgroundColor: cssVarV2('layer/background/secondary'),
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   border: `1px solid ${cssVarV2('layer/insideBorder/blackBorder')}`,
   padding: '8px 10px',
   gap: '8px',

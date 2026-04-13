@@ -65,7 +65,7 @@ export const includeItem = style({
   gap: 16,
   whiteSpace: 'nowrap',
   border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   padding: '4px 8px 4px',
 });
 export const includeTitle = style({
@@ -133,7 +133,7 @@ export const rulesTitleHighlight = style({
 });
 export const bottomButton = style({
   padding: '4px 12px',
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const actionButton = style({
   minWidth: 80,

@@ -14,7 +14,7 @@ export const headerCreateNewCollectionIconButton = style({
   fontSize: '16px',
   width: '32px',
   height: '28px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 export const headerCreateNewButtonHidden = style({
   opacity: 0,
@@ -73,7 +73,7 @@ export const filterInnerArea = style({
   gap: 8,
   padding: '8px',
   background: cssVarV2('layer/background/secondary'),
-  borderRadius: '12px',
+  borderRadius: 'var(--affine-radius-md)',
 });
 
 export const filters = style({

@@ -29,7 +29,7 @@ export const modalContentContainer = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  borderRadius: 12,
+  borderRadius: 'var(--affine-radius-md)',
   '@media': {
     // for small screen
     'screen and (width <= 640px)': {

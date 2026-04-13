@@ -13,7 +13,7 @@ export const container = style({
   alignItems: 'center',
   gap: 8,
   padding: '4px 6px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   outline: 'none',
   width: '100%',
   maxWidth: 500,
@@ -175,7 +175,7 @@ export const settingButton = style({
   placeItems: 'center',
   color: cssVarV2('icon/primary'),
 
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   boxShadow: 'none',
   background: 'transparent',
   cursor: 'pointer',

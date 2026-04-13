@@ -20,7 +20,7 @@ export const tagListHeaderTitle = style({
 });
 export const newTagButton = style({
   padding: '6px 10px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   background: cssVar('backgroundPrimaryColor'),
   fontSize: cssVar('fontXs'),
   fontWeight: 500,

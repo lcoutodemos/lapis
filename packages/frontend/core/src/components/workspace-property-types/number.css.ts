@@ -8,7 +8,7 @@ export const numberPropertyValueInput = style({
   paddingLeft: '5px',
   width: '100%',
   height: '100%',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   fontSize: cssVar('fontSm'),
   ':focus': {
     border: `1px solid ${cssVar('blue700')}`,

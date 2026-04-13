@@ -67,7 +67,7 @@ export const searchInput = style({
 export const InputContainer = style({
   display: 'flex',
   gap: '4px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   padding: '4px',
   flexWrap: 'wrap',
   width: '100%',
@@ -113,7 +113,7 @@ export const buttonsContainer = style({
 
 export const button = style({
   padding: '4px 12px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   fontSize: cssVar('fontSm'),
   fontWeight: 500,
   display: 'flex',

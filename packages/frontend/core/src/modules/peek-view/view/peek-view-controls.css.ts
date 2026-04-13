@@ -15,7 +15,7 @@ export const root = style({
 });
 
 export const button = style({
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   width: 32,
   height: 32,
   background: cssVarV2('centerPeek/buttonBackground'),

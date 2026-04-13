@@ -18,7 +18,7 @@ export const rowContainerStyle = style({
     '&.clickable:hover': {
       backgroundColor: cssVarV2('layer/background/hoverOverlay'),
       cursor: 'pointer',
-      borderRadius: '4px',
+      borderRadius: 'var(--affine-radius-xs)',
     },
   },
 });

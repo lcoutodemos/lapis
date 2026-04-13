@@ -19,7 +19,7 @@ export const tooltipContent = style({
   padding: '5px 12px',
   fontSize: cssVar('fontSm'),
   lineHeight: '22px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   maxWidth: '280px',
   wordBreak: 'break-word',
   transformOrigin: 'var(--radix-tooltip-content-transform-origin)',
@@ -52,7 +52,7 @@ export const command = style({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '0 4px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   selectors: {
     '&[data-length="1"]': {
       width: 16,

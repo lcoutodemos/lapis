@@ -24,7 +24,7 @@ export const iconButton = style({
   alignItems: 'center',
   justifyContent: 'center',
   fontSize: 20,
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   width: 28,
   height: 28,
   cursor: 'pointer',
@@ -41,7 +41,7 @@ export const iconButton = style({
 
 export const iconSelectorButton = style({
   fontSize: cssVar('fontH5'),
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',

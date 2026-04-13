@@ -12,7 +12,7 @@ export const sidebarContainerInner = style({
   borderRadius: 'inherit',
   selectors: {
     ['[data-client-border=true] &']: {
-      borderRadius: 6,
+      borderRadius: 'var(--affine-radius-xs)',
       border: `0.5px solid ${cssVarV2.layer.insideBorder.border}`,
     },
     ['[data-client-border=true][data-is-floating="true"] &']: {

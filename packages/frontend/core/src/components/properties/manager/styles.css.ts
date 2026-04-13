@@ -15,7 +15,7 @@ export const itemContainer = style({
   padding: '4px 8px',
   gap: '8px',
   color: cssVarV2('text/secondary'),
-  borderRadius: '6px',
+  borderRadius: 'var(--affine-radius-xs)',
   lineHeight: '22px',
   position: 'relative',
   userSelect: 'none',

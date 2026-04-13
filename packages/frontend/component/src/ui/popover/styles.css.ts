@@ -3,7 +3,7 @@ import { style } from '@vanilla-extract/css';
 export const popoverContent = style({
   minWidth: '180px',
   color: cssVar('textPrimaryColor'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   padding: '8px',
   fontSize: cssVar('fontSm'),
   fontWeight: '400',

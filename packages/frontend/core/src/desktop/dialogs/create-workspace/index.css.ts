@@ -31,14 +31,14 @@ const baseFormInput = style({
 export const input = style([
   baseFormInput,
   {
-    borderRadius: 4,
+    borderRadius: 'var(--affine-radius-xs)',
     padding: '8px 10px',
   },
 ]);
 export const select = style([
   baseFormInput,
   {
-    borderRadius: 8,
+    borderRadius: 'var(--affine-radius-sm)',
     padding: '10px',
   },
 ]);

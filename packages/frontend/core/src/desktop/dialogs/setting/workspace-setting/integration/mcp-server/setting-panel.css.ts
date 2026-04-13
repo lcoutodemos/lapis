@@ -11,7 +11,7 @@ export const section = style({
   display: 'flex',
   flexDirection: 'column',
   border: `1px solid ${cssVar('borderColor')}`,
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   padding: '8px 16px',
   gap: '0px',
   marginBottom: '16px',
@@ -28,7 +28,7 @@ export const sectionHeader = style({
 export const preArea = style({
   backgroundColor: cssVarV2('layer/background/secondary'),
   padding: '16px 16px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   margin: '8px 0',
   fontFamily: cssVar('fontMonoFamily'),
   overflowX: 'auto',

@@ -76,7 +76,7 @@ export const itemContent = style({
 });
 
 export const itemIcon = style({
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   borderColor: cssVarV2('layer/insideBorder/border'),
   borderWidth: '1px',
   borderStyle: 'solid',

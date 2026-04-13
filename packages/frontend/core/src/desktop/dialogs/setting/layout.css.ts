@@ -29,7 +29,7 @@ export const scrollThumb = style({
   opacity: 0.6,
   overflow: 'hidden',
   height: '4px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   vars: {
     '--radix-scroll-area-thumb-height': '4px',
   },

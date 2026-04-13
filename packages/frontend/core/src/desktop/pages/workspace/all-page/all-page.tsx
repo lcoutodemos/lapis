@@ -95,6 +95,21 @@ const DefaultDisplayPreference: {
     showDragHandle: true,
     showMoreOperation: true,
   },
+  graph: {
+    view: 'graph',
+    displayProperties: [],
+    orderBy: {
+      type: 'system',
+      key: 'updatedAt',
+      desc: true,
+    },
+    groupBy: undefined,
+    showDocIcon: false,
+    showDocPreview: false,
+    quickFavorite: false,
+    showDragHandle: false,
+    showMoreOperation: false,
+  },
 };
 
 type ViewMode = NonNullable<ExplorerDisplayPreference['view']>;

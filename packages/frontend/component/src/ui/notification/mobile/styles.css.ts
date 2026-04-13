@@ -26,7 +26,7 @@ export const sonner = style({
 export const toastRoot = style({
   width: 'fit-content',
   minHeight: 44,
-  borderRadius: 22,
+  borderRadius: 'var(--affine-radius-round)',
   margin: '0px auto',
   padding: 10,
   backgroundColor: cardColor,

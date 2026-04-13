@@ -40,7 +40,7 @@ export const planCard = style({
   justifyContent: 'space-between',
   padding: '12px',
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
 });
 
 export const currentPlan = style({

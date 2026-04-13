@@ -6,7 +6,7 @@ export const item = style({
   alignItems: 'center',
   gap: 10,
   padding: '6px 8px',
-  borderRadius: 6,
+  borderRadius: 'var(--affine-radius-xs)',
   cursor: 'pointer',
   selectors: {
     '&:hover': {
@@ -18,7 +18,7 @@ export const item = style({
 export const color = style({
   width: 10,
   height: 10,
-  borderRadius: 999,
+  borderRadius: 'var(--affine-radius-round)',
   flexShrink: 0,
 });
 

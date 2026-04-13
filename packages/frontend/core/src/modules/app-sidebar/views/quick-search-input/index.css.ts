@@ -4,7 +4,7 @@ import { style } from '@vanilla-extract/css';
 export const root = style({
   display: 'inline-flex',
   alignItems: 'center',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   fontSize: cssVar('fontSm'),
   width: '100%',
   height: '30px',

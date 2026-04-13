@@ -3,7 +3,7 @@ import { globalStyle, style } from '@vanilla-extract/css';
 
 export const card = style({
   border: `1px solid ${cssVar('borderColor')}`,
-  borderRadius: 16,
+  borderRadius: 'var(--affine-radius-lg)',
   padding: 36,
 });
 
@@ -47,7 +47,7 @@ export const actionButtons = style({
 export const purchaseButton = style({
   minWidth: 160,
   height: 37,
-  borderRadius: 18,
+  borderRadius: 'var(--affine-radius-round)',
   fontWeight: 500,
   fontSize: cssVar('fontSm'),
   lineHeight: '14px',

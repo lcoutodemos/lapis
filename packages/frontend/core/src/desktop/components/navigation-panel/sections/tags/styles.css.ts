@@ -5,7 +5,7 @@ export const draggedOverHighlight = style({
   selectors: {
     '&[data-dragged-over="true"]': {
       background: cssVar('--affine-hover-color'),
-      borderRadius: '4px',
+      borderRadius: 'var(--affine-radius-xs)',
     },
   },
 });

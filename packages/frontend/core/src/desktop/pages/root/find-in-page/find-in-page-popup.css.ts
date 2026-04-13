@@ -36,7 +36,7 @@ export const contentContainer = style({
   width: 400,
   height: 48,
   backgroundColor: cssVar('backgroundOverlayPanelColor'),
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   boxShadow: cssVar('shadow3'),
   minHeight: 48,
   outline: 'none',
@@ -80,7 +80,7 @@ export const inputContainer = style({
   height: '32px',
   position: 'relative',
   padding: '0 8px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   background: cssVar('white10'),
   border: `1px solid ${cssVar('borderColor')}`,
   selectors: {
@@ -127,7 +127,7 @@ export const arrowButtonContainer = style({
   border: '1px solid',
   borderColor: cssVarV2('layer/insideBorder/border'),
   flexShrink: 0,
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   overflow: 'hidden',
 });
 

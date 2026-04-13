@@ -14,7 +14,7 @@ export const tags = style({
 
 export const tag = style({
   padding: '0px 8px',
-  borderRadius: 10,
+  borderRadius: 'var(--affine-radius-sm)',
   alignItems: 'center',
   border: `1px solid ${cssVarV2('layer/insideBorder/blackBorder')}`,
   maxWidth: '100%',
@@ -32,7 +32,7 @@ export const tag = style({
     display: 'inline-block',
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: 'var(--affine-radius-xs)',
     backgroundColor: tagColorVar,
     marginRight: 4,
   },

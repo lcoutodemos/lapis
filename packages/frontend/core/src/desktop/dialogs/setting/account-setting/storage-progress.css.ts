@@ -21,7 +21,7 @@ globalStyle(`${storageProgressWrapper} .storage-progress-desc`, {
 });
 globalStyle(`${storageProgressWrapper} .storage-progress-bar-wrapper`, {
   height: '8px',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   backgroundColor: cssVar('black10'),
   overflow: 'hidden',
 });

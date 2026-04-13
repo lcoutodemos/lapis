@@ -14,7 +14,7 @@ export const memberItemStyle = style({
   selectors: {
     '&:hover': {
       backgroundColor: cssVarV2('layer/background/hoverOverlay'),
-      borderRadius: '4px',
+      borderRadius: 'var(--affine-radius-xs)',
     },
   },
 });

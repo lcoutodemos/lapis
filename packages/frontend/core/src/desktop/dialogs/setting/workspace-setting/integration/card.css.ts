@@ -6,7 +6,7 @@ import { spaceY } from './index.css';
 
 export const card = style({
   padding: '8px 12px 12px 12px',
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   border: '1px solid ' + cssVarV2.layer.insideBorder.border,
   height: 150,
   display: 'flex',
@@ -30,7 +30,7 @@ export const cardHeader = style({
 export const cardIcon = style({
   width: 32,
   height: 32,
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   background: cssVarV2.integrations.background.iconSolid,
   boxShadow: cssVar('buttonShadow'),
   border: `0.5px solid ${cssVarV2.layer.insideBorder.border}`,

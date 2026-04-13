@@ -50,7 +50,7 @@ export const memberSelectorSelectedTags = style({
   minHeight: 42,
   selectors: {
     [`${memberSelectorRootMobile} &`]: {
-      borderRadius: 12,
+      borderRadius: 'var(--affine-radius-md)',
       paddingBottom: '10px',
       backgroundColor: cssVarV2('layer/background/primary'),
     },
@@ -97,7 +97,7 @@ export const memberSelectorScrollContainer = style({
   gap: '8px',
   selectors: {
     [`${memberSelectorRootMobile} &`]: {
-      borderRadius: 12,
+      borderRadius: 'var(--affine-radius-md)',
       backgroundColor: cssVarV2('layer/background/primary'),
       gap: 0,
       padding: 4,
@@ -114,7 +114,7 @@ export const memberSelectorItem = style({
   height: '34px',
   gap: 8,
   cursor: 'pointer',
-  borderRadius: '4px',
+  borderRadius: 'var(--affine-radius-xs)',
   selectors: {
     '&[data-focused=true]': {
       backgroundColor: cssVar('hoverColor'),
@@ -165,7 +165,7 @@ export const memberItemInlineMode = style({
     },
   },
   fontSize: 'inherit',
-  borderRadius: '10px',
+  borderRadius: 'var(--affine-radius-sm)',
   columnGap: '4px',
   borderWidth: '1px',
   borderStyle: 'solid',

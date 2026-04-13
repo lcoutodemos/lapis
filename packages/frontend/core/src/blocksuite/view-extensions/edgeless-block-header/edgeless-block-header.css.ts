@@ -66,7 +66,7 @@ export const button = style({
   padding: buttonPadding,
   pointerEvents: 'auto',
   color: cssVarV2('icon/transparentBlack'),
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   gap: 0,
 });
 

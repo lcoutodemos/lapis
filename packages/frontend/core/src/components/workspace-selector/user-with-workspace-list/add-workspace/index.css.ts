@@ -9,7 +9,7 @@ export const ItemContainer = style({
   padding: '6px 16px 6px 11px',
   gap: '12px',
   cursor: 'pointer',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   transition: 'background-color 0.2s',
   fontSize: '24px',
 });

@@ -11,7 +11,7 @@ export const item = style({
   lineHeight: '24px',
   fontSize: cssVar('fontBase'),
   color: cssVarV2('text/secondary'),
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   backgroundColor: 'var(--affine-background-primary-color)',
   cursor: 'pointer',
   userSelect: 'none',

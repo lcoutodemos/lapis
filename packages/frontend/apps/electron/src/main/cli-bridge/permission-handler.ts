@@ -18,7 +18,7 @@ import http from 'node:http';
 import { nanoid } from 'nanoid';
 
 import { logger } from '../logger';
-import type { PermissionOption } from './transports/types';
+import type { PermissionMode, PermissionOption } from './transports/types';
 
 export interface PermissionRequest {
   questionId: string;
@@ -37,17 +37,13 @@ type PendingPermission = {
 
 const PERMISSION_TIMEOUT_MS = 120_000; // 2 minutes
 
-// Claude Code built-in tools are auto-approved — sandboxed in the main process.
-// AFFiNE writes arrive via Bash/curl, which is already in this set; individual
-// write ops (apply, create) are gated by the user via the permission UI instead.
-const SAFE_TOOLS = new Set([
+// Tools that are always auto-approved regardless of permission mode (read-only / safe).
+const ALWAYS_SAFE_TOOLS = new Set([
   'Task',
   'AskUserQuestion',
-  'Bash',
   'CronCreate',
   'CronDelete',
   'CronList',
-  'Edit',
   'EnterPlanMode',
   'EnterWorktree',
   'ExitPlanMode',
@@ -57,7 +53,6 @@ const SAFE_TOOLS = new Set([
   'LS',
   'ListMcpResourcesTool',
   'Monitor',
-  'NotebookEdit',
   'Read',
   'ReadMcpResourceTool',
   'RemoteTrigger',
@@ -73,19 +68,27 @@ const SAFE_TOOLS = new Set([
   'ToolSearch',
   'WebFetch',
   'WebSearch',
-  'Write',
 ]);
+
+// Write-capable tools that require user approval in 'ask' mode.
+const WRITE_TOOLS = new Set(['Bash', 'Edit', 'NotebookEdit', 'Write']);
 
 export class PermissionHandler {
   private readonly server: http.Server;
   private port = 0;
   private readonly pending = new Map<string, PendingPermission>();
   private onRequest?: (req: PermissionRequest) => void;
+  private permissionMode: PermissionMode = 'default';
 
   constructor() {
     this.server = http.createServer((req, res) => {
       this.handleRequest(req, res).catch(err => logger.error(err));
     });
+  }
+
+  setPermissionMode(mode: PermissionMode): void {
+    this.permissionMode = mode;
+    logger.info('[permission-handler] mode set to', mode);
   }
 
   async start(): Promise<number> {
@@ -156,10 +159,16 @@ export class PermissionHandler {
 
     const toolName: string = hookData.tool_name || hookData.tool?.name || '';
 
-    // Auto-approve safe tools without UI
-    if (SAFE_TOOLS.has(toolName)) {
+    // Always auto-approve read-only tools
+    if (ALWAYS_SAFE_TOOLS.has(toolName)) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      // Empty response = approved in Claude Code hook protocol
+      res.end('{}');
+      return;
+    }
+
+    // In default/allow-all mode, also auto-approve write tools
+    if (this.permissionMode !== 'ask' && WRITE_TOOLS.has(toolName)) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end('{}');
       return;
     }

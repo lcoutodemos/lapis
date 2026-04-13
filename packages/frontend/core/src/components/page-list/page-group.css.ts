@@ -75,7 +75,7 @@ export const selectAllButton = style({
   cursor: 'pointer',
   fontSize: cssVar('fontXs'),
   height: '20px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   padding: '0 8px',
   selectors: {
     '&:hover': {

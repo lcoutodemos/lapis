@@ -9,7 +9,7 @@ export const inputWrapper = style({
   color: cssVarV2('text/primary'),
   border: '1px solid',
   backgroundColor: cssVarV2('input/background'),
-  borderRadius: 8,
+  borderRadius: 'var(--affine-radius-sm)',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
@@ -56,7 +56,7 @@ export const mobileInputWrapper = style([
   inputWrapper,
   {
     height: 30,
-    borderRadius: 4,
+    borderRadius: 'var(--affine-radius-xs)',
   },
 ]);
 

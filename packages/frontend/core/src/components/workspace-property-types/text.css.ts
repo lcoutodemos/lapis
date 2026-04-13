@@ -28,7 +28,7 @@ export const textarea = style({
 export const mobileTextareaWrapper = style({
   position: 'relative',
   background: cssVarV2('layer/background/primary'),
-  borderRadius: 12,
+  borderRadius: 'var(--affine-radius-md)',
 });
 
 const mobileTextareaBase = {

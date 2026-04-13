@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css';
 export const inlineEditWrapper = style({
   position: 'relative',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   padding: 4,
   display: 'inline-block',
   minWidth: 50,

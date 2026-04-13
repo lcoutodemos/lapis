@@ -9,7 +9,7 @@ export const docItem = style({
 });
 
 export const duplicateTag = style({
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   padding: '0 8px',
   fontSize: cssVar('fontXs'),
   lineHeight: '20px',

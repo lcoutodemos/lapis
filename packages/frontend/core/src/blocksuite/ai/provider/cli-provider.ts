@@ -25,6 +25,19 @@ import { AIProvider } from './ai-provider';
 // Environment guard — only run inside Electron renderer
 // ---------------------------------------------------------------------------
 
+export interface CLIModelInfo {
+  id: string;
+  label: string;
+  category: string;
+  version: string;
+}
+
+export interface CLIRuntimeOptions {
+  models: CLIModelInfo[];
+  selectedModel: string | null;
+  permissionMode: string;
+}
+
 declare global {
   interface Window {
     // Exposed by AFFiNE's preload script
@@ -43,6 +56,11 @@ declare global {
         }) => Promise<{ ok: boolean }>;
         capabilityReady: () => Promise<{ ok: boolean }>;
         status: () => Promise<unknown>;
+        getRuntimeOptions: () => Promise<CLIRuntimeOptions>;
+        updateRuntimeOptions: (opts: {
+          model?: string | null;
+          permissionMode?: string;
+        }) => Promise<{ ok: boolean }>;
       };
       // Raw event subscription (built by preload)
       __eventEmitter?: unknown;
@@ -68,6 +86,7 @@ interface CLIEventPayload {
   sessionId?: string;
   toolName?: string;
   toolId?: string;
+  input?: unknown;
   costUsd?: number;
   durationMs?: number;
   questionId?: string;
@@ -107,6 +126,77 @@ function isElectron(): boolean {
 // Core streaming primitive
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Tool activity labels — shown inline as Claude calls tools
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse a Bash command directed at our local REST API and return a
+ * human-readable label describing what the command does.
+ */
+function parseBashActivity(command: string): string {
+  if (/\/docs\/[^/\s]+\/apply/.test(command))
+    return 'Applying changes to document';
+  if (
+    /POST[^|]*\/docs\b/.test(command) ||
+    /-X\s*POST[^|]*\/docs\b/.test(command) ||
+    /\/docs\s*['"]?\s*-d/.test(command)
+  )
+    return 'Creating document';
+  if (/\/search/.test(command)) return 'Searching workspace';
+  if (/\/docs\/[^/\s"']+/.test(command)) return 'Reading document';
+  if (/\/docs/.test(command)) return 'Listing documents';
+  // Truncate long raw commands for display
+  const bare = command.replace(/^(curl\s+(-[a-zA-Z]+\s+)*)/i, '').trim();
+  return bare.length > 60
+    ? `Running: ${bare.slice(0, 57)}…`
+    : `Running: ${bare}`;
+}
+
+function getToolActivityLabel(toolName: string, input: unknown): string {
+  const inp = input as Record<string, unknown> | null | undefined;
+  switch (toolName) {
+    case 'Bash': {
+      const cmd = inp?.command ? String(inp.command) : '';
+      return cmd ? parseBashActivity(cmd) : 'Running command';
+    }
+    case 'Read': {
+      const p = inp?.file_path ? String(inp.file_path).split('/').pop() : '';
+      return p ? `Reading ${p}` : 'Reading file';
+    }
+    case 'Write': {
+      const p = inp?.file_path ? String(inp.file_path).split('/').pop() : '';
+      return p ? `Writing ${p}` : 'Writing file';
+    }
+    case 'Edit': {
+      const p = inp?.file_path ? String(inp.file_path).split('/').pop() : '';
+      return p ? `Editing ${p}` : 'Editing file';
+    }
+    case 'Grep':
+      return inp?.pattern
+        ? `Searching: ${String(inp.pattern).slice(0, 40)}`
+        : 'Searching';
+    case 'Glob':
+      return 'Finding files';
+    case 'WebSearch':
+      return inp?.query
+        ? `Web search: ${String(inp.query).slice(0, 40)}`
+        : 'Searching web';
+    case 'WebFetch':
+      return inp?.url
+        ? `Fetching ${String(inp.url).slice(0, 50)}`
+        : 'Fetching URL';
+    case 'Task':
+      return 'Running subtask';
+    case 'TodoRead':
+      return 'Checking task list';
+    case 'TodoWrite':
+      return 'Updating task list';
+    default:
+      return `Using ${toolName}`;
+  }
+}
+
 /**
  * Send a prompt to the CLI bridge and return an AsyncIterable<string>
  * that yields each text chunk as it streams.
@@ -139,6 +229,9 @@ function promptViaCLI(
       // If not, we fall back to the task_complete result text so the chat
       // always shows something even when Claude spent the whole turn using tools.
       let streamedText = false;
+      // Track whether we injected any tool-activity labels so we can add
+      // a visual separator before the actual response text.
+      let hadToolActivity = false;
 
       const push = (chunk: string) => {
         chunks.push(chunk);
@@ -151,15 +244,31 @@ function promptViaCLI(
         console.info('[cli-provider] event', ev.type);
 
         if (ev.type === 'text_chunk' && ev.text) {
+          // If we showed tool activity labels, add a separator before the response
+          if (hadToolActivity && !streamedText) {
+            push('\n\n');
+          }
           streamedText = true;
           push(ev.text);
+        } else if (ev.type === 'tool_call' && ev.toolName) {
+          const label = getToolActivityLabel(ev.toolName, ev.input);
+          // Format as a subtle italic line; newline prefix ensures it starts
+          // on its own line even if preceded by other activity labels
+          push(`\n*${label}...*`);
+          hadToolActivity = true;
         } else if (ev.type === 'task_complete') {
           console.info('[cli-provider] task_complete — stream done');
           // If Claude only used tools and produced no streaming text, the
           // result summary is the only human-readable response. Push it as a
           // chunk so the chat panel always shows the assistant's reply.
           if (!streamedText && ev.text) {
+            // Add separator after activity labels if we had any
+            if (hadToolActivity) push('\n\n');
             push(ev.text);
+          } else if (!streamedText && !hadToolActivity) {
+            // Completely empty response — likely a cold-start or session init
+            // issue on the first Claude Code spawn. Show a recoverable nudge.
+            push('_(No response received — please send your message again.)_');
           }
           done = true;
           wakeUp?.();
@@ -632,12 +741,16 @@ export function registerCLIProvider(): void {
       const sessionId: string | undefined = opts?.sessionId;
       const workspaceId: string | undefined = opts?.workspaceId;
 
-      // Store the user's original input (not the transformed CLI prompt) for display
+      // The user's original input (not the transformed CLI prompt) for display
       const userText = (opts?.input as string | undefined) ?? prompt;
-      storeMessage(sessionId, workspaceId, 'user', userText);
 
       if (opts.stream) {
-        // Wrap the stream to capture the full assistant response for storage
+        // Store messages AFTER the stream ends, not before.
+        // Storing the user message before the stream mutates session.messages
+        // in place. React picks this up on the next re-render (triggered by
+        // setStatus('transmitting')) and sees hasSessionHistory = true, which
+        // changes contentKey from doc.id to session.sessionId, tearing down
+        // and recreating AIChatContent mid-stream, losing the first response.
         const inner = promptViaCLI(prompt, opts.signal);
         return {
           [Symbol.asyncIterator]: async function* () {
@@ -646,6 +759,7 @@ export function registerCLIProvider(): void {
               fullText += chunk;
               yield chunk;
             }
+            storeMessage(sessionId, workspaceId, 'user', userText);
             storeMessage(sessionId, workspaceId, 'assistant', fullText);
           },
         };
@@ -654,6 +768,7 @@ export function registerCLIProvider(): void {
         for await (const chunk of promptViaCLI(prompt, opts.signal)) {
           result += chunk;
         }
+        storeMessage(sessionId, workspaceId, 'user', userText);
         storeMessage(sessionId, workspaceId, 'assistant', result);
         return result;
       }

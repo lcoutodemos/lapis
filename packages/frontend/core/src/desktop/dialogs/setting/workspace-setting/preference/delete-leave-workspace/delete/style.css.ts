@@ -5,7 +5,7 @@ export const modalWrapper = style({
   padding: '0px',
   width: '560px',
   background: cssVar('backgroundOverlayPanelColor'),
-  borderRadius: '12px',
+  borderRadius: 'var(--affine-radius-md)',
 });
 export const modalHeader = style({
   margin: '44px 0px 12px 0px',

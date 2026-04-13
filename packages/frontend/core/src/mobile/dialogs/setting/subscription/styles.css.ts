@@ -7,7 +7,7 @@ export const root = style({
   alignItems: 'center',
   gap: 16,
   border: `1px solid ${cssVarV2('database/border')}`,
-  borderRadius: '12px',
+  borderRadius: 'var(--affine-radius-md)',
   padding: '10px 16px',
   backgroundColor: cssVarV2('edgeless/selection/selectionMarqueeBackground'),
 });

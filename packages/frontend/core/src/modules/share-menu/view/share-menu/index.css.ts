@@ -93,7 +93,7 @@ export const localSharePage = style({
   padding: '12px 8px',
   display: 'flex',
   alignItems: 'center',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   backgroundColor: cssVarV2('layer/background/secondary'),
   minHeight: '84px',
   position: 'relative',

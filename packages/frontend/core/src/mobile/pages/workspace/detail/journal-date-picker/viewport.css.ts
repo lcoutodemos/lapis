@@ -19,6 +19,6 @@ export const draggable = style({
 export const draggableHandle = style({
   width: 36,
   height: 5,
-  borderRadius: 5,
+  borderRadius: 'var(--affine-radius-xs)',
   background: cssVarV2('block/notSupportedBlock/inlineBg/hover'),
 });

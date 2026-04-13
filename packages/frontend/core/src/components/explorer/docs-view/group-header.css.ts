@@ -9,7 +9,7 @@ export const groupHeader = style({
   justifyContent: 'space-between',
   position: 'relative',
   padding: '0px 4px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   ':hover': {
     background: cssVarV2.layer.background.hoverOverlay,
   },
@@ -94,6 +94,6 @@ export const selectAllButton = style([
     fontSize: 12,
     lineHeight: '20px',
     color: cssVarV2.text.secondary,
-    borderRadius: 4,
+    borderRadius: 'var(--affine-radius-xs)',
   },
 ]);

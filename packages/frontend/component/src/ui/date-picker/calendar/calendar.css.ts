@@ -143,7 +143,7 @@ export const calendarHeaderTriggerButton = style([
     fontSize: vars.cellFontSize,
     fontWeight: 600,
     padding: '0 6px',
-    borderRadius: 4,
+    borderRadius: 'var(--affine-radius-xs)',
     whiteSpace: 'nowrap',
     selectors: {
       '[data-mobile="true"] &': {
@@ -167,7 +167,7 @@ export const headerNavToday = style([
     fontWeight: 400,
     lineHeight: '22px',
     padding: '0 4px',
-    borderRadius: 4,
+    borderRadius: 'var(--affine-radius-xs)',
     color: cssVar('iconColor'),
     textTransform: 'uppercase',
   },
@@ -201,7 +201,7 @@ export const monthViewBodyCellInner = style([
   {
     width: '100%',
     height: '100%',
-    borderRadius: 8,
+    borderRadius: 'var(--affine-radius-sm)',
     fontSize: vars.cellFontSize,
     color: cssVar('textPrimaryColor'),
     fontWeight: 400,

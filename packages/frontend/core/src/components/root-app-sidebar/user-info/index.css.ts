@@ -44,7 +44,7 @@ export const usageBlock = style({
   display: 'flex',
   flexDirection: 'column',
   gap: 4,
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
 });
 export const aiUsageBlock = style({
   padding: '0px 6px 12px',
@@ -70,7 +70,7 @@ export const usageLabelTitle = style({
 
 export const cloudUsageBar = style({
   height: 10,
-  borderRadius: 5,
+  borderRadius: 'var(--affine-radius-xs)',
   overflow: 'hidden',
   position: 'relative',
   minWidth: 260,
@@ -102,7 +102,7 @@ export const teamWorkspace = style({
   display: 'flex',
   alignItems: 'center',
   gap: '4px',
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   cursor: 'pointer',
   padding: '2px 6px',
   ':hover': {
@@ -116,7 +116,7 @@ export const teamAvatarStack = style({
 });
 
 export const workspaceAvatar = style({
-  borderRadius: 4,
+  borderRadius: 'var(--affine-radius-xs)',
   border: `1px solid ${cssVarV2('layer/white')}`,
   selectors: {
     '&.multi-avatar': {

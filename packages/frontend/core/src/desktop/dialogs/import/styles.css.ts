@@ -75,7 +75,7 @@ export const importItem = style({
   height: 'auto',
   gap: '4px',
   padding: '8px 12px',
-  borderRadius: '8px',
+  borderRadius: 'var(--affine-radius-sm)',
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
   background: cssVarV2('button/secondary'),
   selectors: {

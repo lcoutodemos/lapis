@@ -23,7 +23,7 @@ export const filterValueStyle = style({
     '&:has(>:hover)': {
       cursor: 'pointer',
       background: cssVar('hoverColor'),
-      borderRadius: '4px',
+      borderRadius: 'var(--affine-radius-xs)',
     },
     '&:empty': {
       display: 'none',
@@ -70,6 +70,6 @@ export const switchStyle = style({
   ':hover': {
     cursor: 'pointer',
     background: cssVar('hoverColor'),
-    borderRadius: '4px',
+    borderRadius: 'var(--affine-radius-xs)',
   },
 });
