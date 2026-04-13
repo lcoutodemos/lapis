@@ -1,5 +1,4 @@
-import { Button, IconButton } from '@affine/component';
-import { useI18n } from '@affine/i18n';
+import { Checkbox, IconButton } from '@affine/component';
 import { ToggleRightIcon } from '@blocksuite/icons/rc';
 import { useLiveData } from '@toeverything/infra';
 import clsx from 'clsx';
@@ -20,81 +19,78 @@ export const DocGroupHeader = ({
 }: HTMLAttributes<HTMLDivElement> & {
   groupId: string;
 }) => {
-  const t = useI18n();
   const contextValue = useContext(DocExplorerContext);
 
   const groups = useLiveData(contextValue.groups$);
   const selectedDocIds = useLiveData(contextValue.selectedDocIds$);
   const collapsedGroups = useLiveData(contextValue.collapsedGroups$);
-  const selectMode = useLiveData(contextValue.selectMode$);
 
-  const group = groups.find(g => g.key === groupId);
-  const isGroupAllSelected = group?.items.every(id =>
-    selectedDocIds.includes(id)
+  const group = groups.find(
+    (g: { key: string; items: string[] }) => g.key === groupId
   );
+  const groupItems: string[] = group?.items ?? [];
+  const isGroupAllSelected =
+    groupItems.length > 0 &&
+    groupItems.every((id: string) => selectedDocIds.includes(id));
+  const isGroupSomeSelected =
+    groupItems.some((id: string) => selectedDocIds.includes(id)) &&
+    !isGroupAllSelected;
 
   const handleToggleCollapse = useCallback(() => {
     const prev = contextValue.collapsedGroups$.value;
     contextValue.collapsedGroups$.next(
       prev.includes(groupId)
-        ? prev.filter(id => id !== groupId)
+        ? prev.filter((id: string) => id !== groupId)
         : [...prev, groupId]
     );
   }, [groupId, contextValue]);
 
-  const handleSelectAll = useCallback(() => {
-    if (!contextValue.selectMode$?.value) {
-      contextValue.selectMode$?.next(true);
-    }
-    const prev = contextValue.selectedDocIds$.value;
-    if (isGroupAllSelected) {
-      contextValue.selectedDocIds$.next(
-        prev.filter(id => !group?.items.includes(id))
-      );
-    } else {
-      const newSelected = [...prev];
-      group?.items.forEach(id => {
-        if (!newSelected.includes(id)) {
-          newSelected.push(id);
-        }
-      });
-      contextValue.selectedDocIds$.next(newSelected);
-    }
-  }, [contextValue, group?.items, isGroupAllSelected]);
-
-  const selectedCount = group?.items.filter(id =>
-    selectedDocIds.includes(id)
-  ).length;
+  const handleGroupCheckbox = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const items: string[] =
+        groups.find((g: { key: string; items: string[] }) => g.key === groupId)
+          ?.items ?? [];
+      if (!contextValue.selectMode$?.value) {
+        contextValue.selectMode$?.next(true);
+      }
+      const prev = contextValue.selectedDocIds$.value;
+      const allSelected =
+        items.length > 0 && items.every((id: string) => prev.includes(id));
+      if (allSelected) {
+        contextValue.selectedDocIds$.next(
+          prev.filter((id: string) => !items.includes(id))
+        );
+      } else {
+        const newSelected = [...prev];
+        items.forEach((id: string) => {
+          if (!newSelected.includes(id)) newSelected.push(id);
+        });
+        contextValue.selectedDocIds$.next(newSelected);
+      }
+    },
+    [contextValue, groupId, groups]
+  );
 
   return (
     <div
       className={styles.groupHeader}
       data-collapsed={collapsedGroups.includes(groupId)}
     >
+      <div className={styles.groupCheckbox} onClick={handleGroupCheckbox}>
+        <Checkbox
+          checked={isGroupAllSelected}
+          indeterminate={isGroupSomeSelected}
+          onChange={() => {}}
+        />
+      </div>
       <div className={clsx(styles.content, className)} {...props} />
-      {selectMode ? (
-        <div className={styles.selectInfo}>
-          {selectedCount}/{group?.items.length}
-        </div>
-      ) : null}
       <IconButton
         className={styles.collapseButton}
         icon={<ToggleRightIcon className={styles.collapseButtonIcon} />}
         onClick={handleToggleCollapse}
       />
       <div className={styles.space} />
-      <Button
-        size="custom"
-        className={styles.selectAllButton}
-        variant="plain"
-        onClick={handleSelectAll}
-      >
-        {t[
-          isGroupAllSelected
-            ? 'com.affine.page.group-header.clear'
-            : 'com.affine.page.group-header.select-all'
-        ]()}
-      </Button>
     </div>
   );
 };

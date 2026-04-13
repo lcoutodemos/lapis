@@ -59,31 +59,16 @@ export const listDragHandle = style([
   },
 ]);
 export const listSelect = style({
-  width: 0,
+  width: 20,
   height: 24,
   fontSize: 20,
   padding: 2,
-  // to make sure won't take place when hidden
-  // 12 = gap + padding * 2
-  marginLeft: -12,
   flexShrink: 0,
   display: 'flex',
   color: cssVarV2.icon.primary,
-  overflow: 'hidden',
   alignItems: 'center',
-  justifyContent: 'end',
-  transition: 'width 0.25s ease, margin-left 0.25s ease',
+  justifyContent: 'center',
   cursor: 'pointer',
-  selectors: {
-    '&[data-select-mode="true"]': {
-      width: 24,
-      marginLeft: 0,
-    },
-    [`${listViewRoot}:hover &`]: {
-      width: 24,
-      marginLeft: 0,
-    },
-  },
 });
 
 export const listIcon = style({

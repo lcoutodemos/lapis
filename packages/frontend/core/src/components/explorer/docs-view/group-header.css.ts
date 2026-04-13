@@ -14,6 +14,19 @@ export const groupHeader = style({
     background: cssVarV2.layer.background.hoverOverlay,
   },
 });
+
+export const groupCheckbox = style({
+  width: 20,
+  height: 24,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+  cursor: 'pointer',
+  marginRight: 8,
+  fontSize: 20,
+  color: cssVarV2.icon.primary,
+});
 export const space = style({
   width: 0,
   flex: 1,
@@ -73,27 +86,9 @@ export const collapseButtonIcon = style({
   },
 });
 
-export const selectInfo = style({
-  fontSize: 14,
-  lineHeight: '22px',
-  color: cssVarV2.text.tertiary,
-  marginLeft: 12,
-});
-
 export const content = style({
   flexShrink: 0,
   fontSize: 15,
   lineHeight: '24px',
   color: cssVarV2.text.secondary,
 });
-
-export const selectAllButton = style([
-  showOnHover,
-  {
-    padding: '0px 4px',
-    fontSize: 12,
-    lineHeight: '20px',
-    color: cssVarV2.text.secondary,
-    borderRadius: 'var(--affine-radius-xs)',
-  },
-]);

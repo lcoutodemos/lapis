@@ -2,11 +2,17 @@ import {
   Masonry,
   type MasonryGroup,
   type MasonryItem,
+  Menu,
+  MenuItem,
   useConfirmModal,
 } from '@affine/component';
 import { DocsService } from '@affine/core/modules/doc';
+import { CompatibleFavoriteItemsAdapter } from '@affine/core/modules/favorite';
+import type { FolderNode } from '@affine/core/modules/organize';
+import { OrganizeService } from '@affine/core/modules/organize';
 import { WorkspacePropertyService } from '@affine/core/modules/workspace-property';
 import { Trans, useI18n } from '@affine/i18n';
+import { FolderIcon } from '@blocksuite/icons/rc';
 import { useLiveData, useService } from '@toeverything/infra';
 import { cssVarV2 } from '@toeverything/theme/v2';
 import { memo, useCallback, useContext, useEffect, useMemo } from 'react';
@@ -95,6 +101,107 @@ export const DocListItemComponent = memo(function DocListItemComponent({
   return <DocListItem docId={itemId} groupId={groupId} />;
 });
 
+// Trigger button for the folder picker — matches FloatingToolbar.Button style
+const FolderPickerMenuTrigger = () => {
+  return (
+    <button
+      data-testid="list-toolbar-move-to-folder"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 32,
+        padding: '0 6px',
+        borderRadius: 'var(--affine-radius-sm)',
+        border: 'none',
+        background: 'transparent',
+        cursor: 'pointer',
+        color: 'inherit',
+        fontSize: 20,
+      }}
+      onMouseEnter={e =>
+        ((e.currentTarget as HTMLElement).style.background =
+          'var(--affine-hover-color)')
+      }
+      onMouseLeave={e =>
+        ((e.currentTarget as HTMLElement).style.background = 'transparent')
+      }
+    >
+      <FolderIcon />
+    </button>
+  );
+};
+
+// Single folder item in the picker
+const FolderPickerItem = ({
+  node,
+  depth,
+  onSelect,
+}: {
+  node: FolderNode;
+  depth: number;
+  onSelect: (folderId: string) => void;
+}) => {
+  const name = useLiveData(node.name$);
+  const type = useLiveData(node.type$);
+  const children = useLiveData(node.sortedChildren$);
+  const t = useI18n();
+
+  if (type !== 'folder' || !node.id) return null;
+
+  return (
+    <>
+      <MenuItem
+        prefixIcon={<FolderIcon />}
+        style={{ paddingLeft: 12 + depth * 16 }}
+        onClick={() => node.id && onSelect(node.id)}
+      >
+        {name || t['Untitled']()}
+      </MenuItem>
+      {(children as FolderNode[]).map(child => (
+        <FolderPickerItem
+          key={child.id}
+          node={child}
+          depth={depth + 1}
+          onSelect={onSelect}
+        />
+      ))}
+    </>
+  );
+};
+
+const FolderPickerMenu = ({
+  onSelect,
+}: {
+  onSelect: (folderId: string) => void;
+}) => {
+  const t = useI18n();
+  const organizeService = useService(OrganizeService);
+  const rootFolder = organizeService.folderTree.rootFolder;
+  const children = useLiveData(rootFolder.sortedChildren$);
+
+  if (children.length === 0) {
+    return (
+      <MenuItem disabled>
+        {t['com.affine.rootAppSidebar.organize.empty']?.() ?? 'No folders yet'}
+      </MenuItem>
+    );
+  }
+
+  return (
+    <>
+      {(children as FolderNode[]).map(node => (
+        <FolderPickerItem
+          key={node.id}
+          node={node}
+          depth={0}
+          onSelect={onSelect}
+        />
+      ))}
+    </>
+  );
+};
+
 export const DocsExplorer = ({
   className,
   disableMultiSelectToolbar,
@@ -121,6 +228,8 @@ export const DocsExplorer = ({
   const t = useI18n();
   const contextValue = useContext(DocExplorerContext);
   const docsService = useService(DocsService);
+  const favAdapter = useService(CompatibleFavoriteItemsAdapter);
+  const organizeService = useService(OrganizeService);
 
   const groupBy = useLiveData(contextValue.groupBy$);
   const groups = useLiveData(contextValue.groups$);
@@ -162,14 +271,27 @@ export const DocsExplorer = ({
     contextValue.selectedDocIds$.next([]);
   }, [contextValue]);
 
-  const allDocIds = useMemo(
-    () => groups.flatMap((g: any) => g.items as string[]),
-    [groups]
-  );
+  const handleFavorite = useCallback(() => {
+    const ids = contextValue.selectedDocIds$.value;
+    for (const docId of ids) {
+      favAdapter.toggle(docId, 'doc');
+    }
+    handleCloseFloatingToolbar();
+  }, [contextValue.selectedDocIds$, favAdapter, handleCloseFloatingToolbar]);
 
-  const handleSelectAll = useCallback(() => {
-    contextValue.selectedDocIds$.next(allDocIds);
-  }, [contextValue, allDocIds]);
+  const handleMoveToFolder = useCallback(
+    (folderId: string) => {
+      const ids = contextValue.selectedDocIds$.value;
+      const folder = organizeService.folderTree.folderNode$(folderId).value;
+      if (!folder) return;
+      for (const docId of ids) {
+        const index = folder.indexAt('after');
+        folder.createLink('doc', docId, index);
+      }
+      handleCloseFloatingToolbar();
+    },
+    [contextValue.selectedDocIds$, organizeService, handleCloseFloatingToolbar]
+  );
 
   const handleMultiDelete = useCallback(() => {
     if (disableMultiDelete) {
@@ -284,10 +406,17 @@ export const DocsExplorer = ({
           onDelete={disableMultiDelete ? undefined : handleMultiDelete}
           onRestore={onRestore ? handleMultiRestore : undefined}
           onClose={handleCloseFloatingToolbar}
-          onSelectAll={
-            !disableMultiDelete && !onRestore ? handleSelectAll : undefined
+          onFavorite={!onRestore ? handleFavorite : undefined}
+          moveToFolderButton={
+            !onRestore ? (
+              <Menu
+                items={<FolderPickerMenu onSelect={handleMoveToFolder} />}
+                contentOptions={{ side: 'top', sideOffset: 8 }}
+              >
+                <FolderPickerMenuTrigger />
+              </Menu>
+            ) : undefined
           }
-          allSelected={selectedDocIds.length === allDocIds.length}
           content={
             <Trans
               i18nKey="com.affine.page.toolbar.selected"
