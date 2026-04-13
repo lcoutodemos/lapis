@@ -113,6 +113,32 @@ export class ChatPanelDocChip extends SignalWatcher(
       }
       if (!doc.ready) {
         doc.load();
+        // doc.load() is synchronous — it schedules loading but does not wait.
+        // Wait for the ready slot (rxjs Subject) before extracting content,
+        // otherwise extractMarkdownFromDoc runs on an empty store.
+        // Guard against a race where the doc becomes ready between load() and
+        // subscribe() by rechecking doc.ready after attaching the listener.
+        await new Promise<void>((resolve, reject) => {
+          if (doc.ready) {
+            resolve();
+            return;
+          }
+          const timer = setTimeout(
+            () => reject(new Error('Doc load timed out')),
+            15000
+          );
+          const sub = doc.slots.ready.subscribe(() => {
+            clearTimeout(timer);
+            sub.unsubscribe();
+            resolve();
+          });
+          // Second check after subscribe to close the race window
+          if (doc.ready) {
+            clearTimeout(timer);
+            sub.unsubscribe();
+            resolve();
+          }
+        });
       }
       const value = await extractMarkdownFromDoc(doc);
       const tokenCount = estimateTokenCount(value);

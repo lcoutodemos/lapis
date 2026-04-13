@@ -704,19 +704,22 @@ export function registerCLIProvider(): void {
     sessionId: string | undefined,
     workspaceId: string | undefined,
     role: 'user' | 'assistant',
-    content: string
+    content: string,
+    attachments?: string[]
   ) {
     if (!sessionId || !workspaceId || !content) return;
     const session = localSessions.find(
       s => s.sessionId === sessionId && s.workspaceId === workspaceId
     );
     if (!session) return;
-    (session.messages as any[]).push({
+    const entry: Record<string, unknown> = {
       id: `cli-msg-${Date.now()}-${role}`,
       role,
       content,
       createdAt: new Date().toISOString(),
-    });
+    };
+    if (attachments?.length) entry.attachments = attachments;
+    (session.messages as any[]).push(entry);
     session.updatedAt = new Date().toISOString();
   }
 
@@ -796,7 +799,7 @@ export function registerCLIProvider(): void {
               fullText += chunk;
               yield chunk;
             }
-            storeMessage(sessionId, workspaceId, 'user', userText);
+            storeMessage(sessionId, workspaceId, 'user', userText, attachments);
             storeMessage(sessionId, workspaceId, 'assistant', fullText);
           },
         };
@@ -809,7 +812,7 @@ export function registerCLIProvider(): void {
         )) {
           result += chunk;
         }
-        storeMessage(sessionId, workspaceId, 'user', userText);
+        storeMessage(sessionId, workspaceId, 'user', userText, attachments);
         storeMessage(sessionId, workspaceId, 'assistant', result);
         return result;
       }
