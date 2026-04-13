@@ -17,7 +17,6 @@ import {
   configureAIChatToolbar,
   getOrCreateAIChatToolbar,
 } from '@affine/core/blocksuite/ai/components/ai-chat-toolbar';
-import { createPlaygroundModal } from '@affine/core/blocksuite/ai/components/playground/modal';
 import { registerAIAppEffects } from '@affine/core/blocksuite/ai/effects/app';
 import type { CLIModelInfo } from '@affine/core/blocksuite/ai/provider/cli-provider';
 import type { AffineEditorContainer } from '@affine/core/blocksuite/block-suite-editor';
@@ -48,14 +47,9 @@ import { useI18n } from '@affine/i18n';
 import { RefNodeSlotsProvider } from '@blocksuite/affine/inlines/reference';
 import { DocModeProvider } from '@blocksuite/affine/shared/services';
 import { createSignalFromObservable } from '@blocksuite/affine/shared/utils';
-import {
-  ArrowDownSmallIcon,
-  CenterPeekIcon,
-  Logo1Icon,
-} from '@blocksuite/icons/rc';
+import { ArrowDownSmallIcon, Logo1Icon } from '@blocksuite/icons/rc';
 import type { Signal } from '@preact/signals-core';
 import { useFramework, useService } from '@toeverything/infra';
-import { html } from 'lit';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { createSessionDeleteHandler } from '../../chat-panel-utils';
@@ -243,13 +237,8 @@ export const EditorChatPanel = ({ editor, onLoad }: SidebarTabProps) => {
   const specs = useAISpecs();
   const handleAISubscribe = useAISubscribe();
 
-  const {
-    docDisplayConfig,
-    searchMenuConfig,
-    reasoningConfig,
-    playgroundConfig,
-  } = useAIChatConfig();
-  const playgroundVisible = useSignalValue(playgroundConfig.visible) ?? false;
+  const { docDisplayConfig, searchMenuConfig, reasoningConfig } =
+    useAIChatConfig();
 
   const [session, setSession] = useState<
     CopilotChatHistoryFragment | null | undefined
@@ -748,45 +737,6 @@ export const EditorChatPanel = ({ editor, onLoad }: SidebarTabProps) => {
     };
   }, [autoResized, workbench]);
 
-  const openPlayground = useCallback(() => {
-    if (!doc || !host) {
-      return;
-    }
-    const playgroundContent = html`
-      <playground-content
-        .host=${host}
-        .doc=${doc}
-        .reasoningConfig=${reasoningConfig}
-        .playgroundConfig=${playgroundConfig}
-        .appSidebarConfig=${appSidebarConfig}
-        .searchMenuConfig=${searchMenuConfig}
-        .docDisplayConfig=${docDisplayConfig}
-        .extensions=${specs}
-        .serverService=${framework.get(ServerService)}
-        .affineFeatureFlagService=${framework.get(FeatureFlagService)}
-        .affineThemeService=${framework.get(AppThemeService)}
-        .notificationService=${notificationService}
-        .affineWorkspaceDialogService=${framework.get(WorkspaceDialogService)}
-        .aiToolsConfigService=${framework.get(AIToolsConfigService)}
-        .subscriptionService=${framework.get(SubscriptionService)}
-        .aiModelService=${framework.get(AIModelService)}
-      ></playground-content>
-    `;
-
-    createPlaygroundModal(playgroundContent, 'AI Playground');
-  }, [
-    appSidebarConfig,
-    doc,
-    docDisplayConfig,
-    framework,
-    host,
-    notificationService,
-    playgroundConfig,
-    reasoningConfig,
-    searchMenuConfig,
-    specs,
-  ]);
-
   const onChatContainerRef = useCallback((node: HTMLDivElement) => {
     if (!node) {
       return;
@@ -834,11 +784,6 @@ export const EditorChatPanel = ({ editor, onLoad }: SidebarTabProps) => {
                 <ProviderHeader />
               )}
             </div>
-            {playgroundVisible ? (
-              <div className={styles.playground} onClick={openPlayground}>
-                <CenterPeekIcon />
-              </div>
-            ) : null}
             <div ref={onChatToolContainerRef} />
           </div>
           <CLIToolActivity />
