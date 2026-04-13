@@ -9,12 +9,13 @@ export const navWrapperStyle = style({
     },
   },
   paddingBottom: 8,
+  backgroundColor: cssVarV2('layer/background/primary'),
   selectors: {
     '&[data-has-border=true]': {
       borderRight: `0.5px solid ${cssVarV2('layer/insideBorder/border')}`,
     },
-    '&[data-is-floating="true"], &[data-is-electron="false"]': {
-      backgroundColor: cssVarV2('layer/background/primary'),
+    '.blur-background &': {
+      backgroundColor: 'transparent',
     },
   },
 });

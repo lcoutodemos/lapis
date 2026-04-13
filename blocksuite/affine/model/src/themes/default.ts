@@ -70,10 +70,15 @@ const NoteBackgroundColorPalettes: Palette[] = [
   ...buildPalettes(NoteBackgroundColorMap),
 ] as const;
 
+const darkGrey = '#333333';
+
 const StrokeColorShortMap = { ...Medium, Black, White } as const;
 
 const StrokeColorShortPalettes: Palette[] = [
-  ...buildPalettes(StrokeColorShortMap),
+  ...buildPalettes(Medium),
+  { key: 'Gray 80%', value: darkGrey },
+  { key: 'Black', value: Black },
+  { key: 'White', value: White },
 ] as const;
 
 const FillColorShortMap = { ...Medium, Black, White, Transparent } as const;

@@ -16,11 +16,223 @@
    * lg  → hero cards, large surface panels
    * round → pill-shaped toggles, switches, full-pill buttons
    * ────────────────────────────────────────────────────────────────── */
-  --affine-radius-xs: 4px;
-  --affine-radius-sm: 8px;
-  --affine-radius-md: 12px;
-  --affine-radius-lg: 16px;
+  --affine-radius-xs: 12px;
+  --affine-radius-sm: 16px;
+  --affine-radius-md: 20px;
+  --affine-radius-lg: 24px;
   --affine-radius-round: 100px;
+
+  /* ── TweakCN theme tokens (light) ────────────────────────────────────
+   * Semantic tokens for new components. Named to match shadcn convention.
+   * ────────────────────────────────────────────────────────────────── */
+  --background: #f3f2f2;
+  --foreground: oklch(0.3485 0 0);
+  --card: #f9f9f9;
+  --card-foreground: oklch(0.3485 0 0);
+  --popover: #f9f9f9;
+  --popover-foreground: oklch(0.3485 0 0);
+  --primary: oklch(0.3867 0 0);
+  --primary-foreground: oklch(0.9551 0 0);
+  --secondary: oklch(0.8842 0.0054 106.5097);
+  --secondary-foreground: oklch(0.3485 0 0);
+  --muted: oklch(0.9158 0 0);
+  --muted-foreground: oklch(0.4313 0 0);
+  --accent: oklch(0.9354 0.0456 94.8549);
+  --accent-foreground: oklch(0.4015 0.0436 37.9587);
+  --destructive: oklch(0.6627 0.0978 20.0041);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.9401 0 0);
+  --input: oklch(1 0 0);
+  --ring: oklch(0.7058 0 0);
+  --sidebar: oklch(0.9619 0.0011 17.1785);
+  --sidebar-foreground: oklch(0.3485 0 0);
+  --sidebar-primary: oklch(0.4891 0 0);
+  --sidebar-primary-foreground: oklch(0.9551 0 0);
+  --sidebar-accent: oklch(0.9354 0.0456 94.8549);
+  --sidebar-accent-foreground: oklch(0.4015 0.0436 37.9587);
+  --sidebar-border: oklch(0.8078 0 0);
+  --radius: 0.625rem;
+  --tracking-normal: 0.5px;
+  --shadow-2xs: 1px 4px 19px 0px hsl(0 0% 0% / 0.04);
+  --shadow-xs: 1px 4px 19px 0px hsl(0 0% 0% / 0.04);
+  --shadow-sm:
+    1px 4px 19px 0px hsl(0 0% 0% / 0.08), 1px 1px 2px -1px hsl(0 0% 0% / 0.08);
+  --shadow-md:
+    1px 4px 19px 0px hsl(0 0% 0% / 0.08), 1px 2px 4px -1px hsl(0 0% 0% / 0.08);
+  --shadow-lg:
+    1px 4px 19px 0px hsl(0 0% 0% / 0.08), 1px 4px 6px -1px hsl(0 0% 0% / 0.08);
+  --shadow-xl:
+    1px 4px 19px 0px hsl(0 0% 0% / 0.08), 1px 8px 10px -1px hsl(0 0% 0% / 0.08);
+  --shadow-2xl: 1px 4px 19px 0px hsl(0 0% 0% / 0.2);
+}
+
+/* ── Affine token overrides (light) ──────────────────────────────────────
+ * Must live in [data-theme=light] to beat @toeverything/theme's own
+ * [data-theme=light] block (same specificity, but we load after it).
+ * ────────────────────────────────────────────────────────────────────── */
+[data-theme='light'] {
+  /* Backgrounds */
+  --affine-background-primary-color: #f9f9f9;
+  --affine-background-secondary-color: #f3f2f2;
+  --affine-background-tertiary-color: #f3f2f2;
+  --affine-background-overlay-panel-color: #f9f9f9;
+  --affine-v2-layer-background-primary: #f3f2f2;
+  --affine-v2-layer-background-secondary: #ececec;
+  --affine-v2-layer-background-tertiary: #ececec;
+  --affine-v2-layer-background-overlayPanel: #f9f9f9;
+  --affine-v2-layer-background-hoverOverlay: rgba(0, 0, 0, 0.04);
+  --affine-v2-dialog-background-primary: #f9f9f9;
+  --affine-v2-slashMenu-background: #f9f9f9;
+  --affine-v2-centerPeek-background: #f9f9f9;
+
+  /* Translucent UI overlay (frosted glass white tint) */
+  --affine-v2-layer-background-translucentUI: #ffffff1a;
+
+  /* Selfhost surfaces */
+  --affine-v2-selfhost-layer-background-primary: #f9f9f9;
+  --affine-v2-selfhost-layer-background-secondary: #f3f2f2;
+  --affine-v2-selfhost-layer-background-sidebarBg-sidebarBg: #f3f2f2;
+
+  /* Text */
+  --affine-text-primary-color: oklch(0.3485 0 0);
+  --affine-text-secondary-color: oklch(0.4313 0 0);
+  --affine-text-disable-color: oklch(0.55 0 0);
+  --affine-v2-text-primary: oklch(0.3485 0 0);
+  --affine-v2-text-secondary: oklch(0.4313 0 0);
+  --affine-v2-text-tertiary: oklch(0.55 0 0);
+  --affine-v2-text-disable: oklch(0.6 0 0);
+  --affine-v2-text-placeholder: oklch(0.62 0 0);
+  --affine-v2-selfhost-text-sidebar-primary: oklch(0.3485 0 0);
+  --affine-v2-selfhost-text-sidebar-secondary: oklch(0.4313 0 0);
+
+  /* Borders */
+  --affine-border-color: oklch(0.9401 0 0);
+  --affine-divider-color: oklch(0.9401 0 0);
+  --affine-v2-layer-insideBorder-border: oklch(0.9401 0 0);
+  --affine-v2-database-border: oklch(0.9401 0 0 / 0.3);
+  --affine-v2-table-border: oklch(0.9401 0 0 / 0.3);
+  --affine-v2-input-border-default: oklch(0.9401 0 0);
+
+  /* Hover */
+  --affine-hover-color: oklch(0.9401 0 0 / 0.5);
+  --affine-hover-color-filled: oklch(0.9401 0 0);
+  --affine-v2-selfhost-button-sidebarButton-bg-hover: oklch(0.9401 0 0 / 0.5);
+
+  /* Primary / brand */
+  --affine-brand-color: oklch(0.3867 0 0);
+  --affine-primary-color: oklch(0.3867 0 0);
+  --affine-v2-button-primary: oklch(0.3867 0 0);
+  --affine-v2-selfhost-button-primary: oklch(0.3867 0 0);
+  --affine-v2-layer-insideBorder-primaryBorder: oklch(0.3867 0 0);
+  --affine-v2-input-border-active: oklch(0.3867 0 0);
+  --affine-v2-icon-activated: oklch(0.3867 0 0);
+  --affine-v2-text-emphasis: oklch(0.3867 0 0);
+  --affine-v2-toggle-background: oklch(0.3867 0 0);
+  --affine-v2-selfhost-progress-primary: oklch(0.3867 0 0);
+  --affine-v2-selfhost-toggle-backgroundOn: oklch(0.3867 0 0);
+
+  /* Icons */
+  --affine-icon-color: oklch(0.4313 0 0);
+  --affine-v2-icon-primary: oklch(0.4313 0 0);
+  --affine-v2-icon-monotone: oklch(0.4313 0 0);
+  --affine-v2-icon-secondary: oklch(0.55 0 0);
+  --affine-v2-icon-tertiary: oklch(0.65 0 0);
+
+  /* Shadows */
+  --affine-menu-shadow: var(--shadow-md);
+  --affine-overlay-panel-shadow: var(--shadow-sm);
+  --affine-popover-shadow: var(--shadow-lg);
+  --affine-button-shadow: var(--shadow-xs);
+  --affine-shadow-1: var(--shadow-xs);
+  --affine-shadow-2: var(--shadow-sm);
+  --affine-shadow-3: var(--shadow-md);
+}
+
+/* ── TweakCN dark mode ───────────────────────────────────────────────── */
+[data-theme='dark'] {
+  --background: oklch(0.2891 0 0);
+  --foreground: oklch(0.8945 0 0);
+  --card: oklch(0.3211 0 0);
+  --card-foreground: oklch(0.8945 0 0);
+  --popover: oklch(0.3211 0 0);
+  --popover-foreground: oklch(0.8945 0 0);
+  --primary: oklch(0.8761 0 0);
+  --primary-foreground: oklch(0.2891 0 0);
+  --secondary: oklch(0.4676 0 0);
+  --secondary-foreground: oklch(0.8078 0 0);
+  --muted: oklch(0.3904 0 0);
+  --muted-foreground: oklch(0.7058 0 0);
+  --accent: oklch(0.8078 0 0);
+  --accent-foreground: oklch(0.3211 0 0);
+  --destructive: oklch(0.7915 0.0491 18.241);
+  --destructive-foreground: oklch(0.2891 0 0);
+  --border: oklch(0.3867 0 0);
+  --input: oklch(0.3211 0 0);
+  --ring: oklch(0.8078 0 0);
+  --sidebar: oklch(0.2478 0 0);
+  --sidebar-foreground: oklch(0.8945 0 0);
+  --sidebar-primary: oklch(0.7572 0 0);
+  --sidebar-primary-foreground: oklch(0.2478 0 0);
+  --sidebar-accent: oklch(0.9067 0 0);
+  --sidebar-accent-foreground: oklch(0.3211 0 0);
+  --sidebar-border: oklch(0.4276 0 0);
+
+  /* Affine token overrides (dark) */
+  --affine-background-primary-color: oklch(0.3211 0 0);
+  --affine-background-secondary-color: oklch(0.3904 0 0);
+  --affine-background-tertiary-color: oklch(0.3904 0 0);
+  --affine-background-overlay-panel-color: oklch(0.3211 0 0);
+  --affine-v2-layer-background-primary: oklch(0.2891 0 0);
+  --affine-v2-layer-background-secondary: oklch(0.3904 0 0);
+  --affine-v2-layer-background-tertiary: oklch(0.3904 0 0);
+  --affine-v2-layer-background-overlayPanel: oklch(0.3211 0 0);
+  --affine-v2-layer-background-hoverOverlay: oklch(0.8078 0 0 / 0.08);
+  --affine-v2-dialog-background-primary: oklch(0.3211 0 0);
+  --affine-v2-slashMenu-background: oklch(0.3211 0 0);
+  --affine-v2-centerPeek-background: oklch(0.3211 0 0);
+  --affine-v2-selfhost-layer-background-primary: oklch(0.2891 0 0);
+  --affine-v2-selfhost-layer-background-secondary: oklch(0.3904 0 0);
+  --affine-v2-selfhost-layer-background-sidebarBg-sidebarBg: oklch(0.2478 0 0);
+
+  --affine-text-primary-color: oklch(0.8945 0 0);
+  --affine-text-secondary-color: oklch(0.7058 0 0);
+  --affine-text-disable-color: oklch(0.55 0 0);
+  --affine-v2-text-primary: oklch(0.8945 0 0);
+  --affine-v2-text-secondary: oklch(0.7058 0 0);
+  --affine-v2-text-tertiary: oklch(0.55 0 0);
+  --affine-v2-text-disable: oklch(0.5 0 0);
+  --affine-v2-text-placeholder: oklch(0.5 0 0);
+  --affine-v2-selfhost-text-sidebar-primary: oklch(0.8945 0 0);
+  --affine-v2-selfhost-text-sidebar-secondary: oklch(0.7058 0 0);
+
+  --affine-border-color: oklch(0.3867 0 0);
+  --affine-divider-color: oklch(0.3867 0 0);
+  --affine-v2-layer-insideBorder-border: oklch(0.3867 0 0);
+  --affine-v2-database-border: oklch(0.3867 0 0 / 0.5);
+  --affine-v2-table-border: oklch(0.3867 0 0 / 0.5);
+  --affine-v2-input-border-default: oklch(0.3867 0 0);
+
+  --affine-hover-color: oklch(0.8078 0 0 / 0.08);
+  --affine-hover-color-filled: oklch(0.3904 0 0);
+  --affine-v2-selfhost-button-sidebarButton-bg-hover: oklch(0.8078 0 0 / 0.08);
+
+  --affine-brand-color: oklch(0.8761 0 0);
+  --affine-primary-color: oklch(0.8761 0 0);
+  --affine-v2-button-primary: oklch(0.8761 0 0);
+  --affine-v2-selfhost-button-primary: oklch(0.8761 0 0);
+  --affine-v2-layer-insideBorder-primaryBorder: oklch(0.8761 0 0);
+  --affine-v2-input-border-active: oklch(0.8761 0 0);
+  --affine-v2-icon-activated: oklch(0.8761 0 0);
+  --affine-v2-text-emphasis: oklch(0.8761 0 0);
+  --affine-v2-toggle-background: oklch(0.8761 0 0);
+  --affine-v2-selfhost-progress-primary: oklch(0.8761 0 0);
+  --affine-v2-selfhost-toggle-backgroundOn: oklch(0.8761 0 0);
+
+  --affine-icon-color: oklch(0.7058 0 0);
+  --affine-v2-icon-primary: oklch(0.7058 0 0);
+  --affine-v2-icon-monotone: oklch(0.7058 0 0);
+  --affine-v2-icon-secondary: oklch(0.55 0 0);
+  --affine-v2-icon-tertiary: oklch(0.45 0 0);
 }
 
 html,

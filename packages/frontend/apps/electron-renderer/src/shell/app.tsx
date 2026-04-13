@@ -37,7 +37,12 @@ export function App() {
     <FrameworkRoot framework={frameworkProvider}>
       <ThemeProvider>
         <I18nProvider>
-          <div className={styles.root} data-translucent={translucent}>
+          <div
+            className={
+              translucent ? `${styles.root} blur-background` : styles.root
+            }
+            data-translucent={translucent}
+          >
             <AppTabsHeader mode="shell" className={styles.appTabsHeader} />
             <div className={styles.body}>
               <ShellAppSidebarFallback />

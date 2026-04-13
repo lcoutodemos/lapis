@@ -64,6 +64,7 @@ import {
   resolveInitialSession,
   type WorkbenchLike,
 } from './chat-panel-session';
+import { CLIToolActivity } from './chat-tool-activity';
 
 // ---------------------------------------------------------------------------
 // Provider header — shows current provider/model and lets the user switch
@@ -840,6 +841,7 @@ export const EditorChatPanel = ({ editor, onLoad }: SidebarTabProps) => {
             ) : null}
             <div ref={onChatToolContainerRef} />
           </div>
+          <CLIToolActivity />
           <div className={styles.content} ref={onChatContainerRef} />
         </div>
       )}

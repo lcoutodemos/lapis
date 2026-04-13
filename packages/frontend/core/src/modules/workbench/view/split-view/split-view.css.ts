@@ -196,7 +196,7 @@ export const resizeHandle = style({
 export const splitViewRoot = style({
   vars: {
     [gap]: '0px',
-    [borderRadius]: '6px',
+    [borderRadius]: 'var(--affine-radius-xs)',
     [resizeHandleWidth]: '10px',
     [dropIndicatorWidth]: '2px',
     [dropIndicatorOpacity]: '0',

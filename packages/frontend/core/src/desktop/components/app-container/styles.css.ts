@@ -1,4 +1,5 @@
 import { cssVar, lightCssVariables } from '@toeverything/theme';
+import { cssVarV2 } from '@toeverything/theme/v2';
 import { globalStyle, style } from '@vanilla-extract/css';
 
 export const appStyle = style({
@@ -7,7 +8,7 @@ export const appStyle = style({
   height: '100dvh',
   flexGrow: '1',
   display: 'flex',
-  backgroundColor: cssVar('backgroundPrimaryColor'),
+  backgroundColor: cssVarV2('layer/background/primary'),
   selectors: {
     '&.blur-background': {
       backgroundColor: 'transparent',
@@ -26,7 +27,7 @@ export const appStyle = style({
 });
 globalStyle(`html[data-theme="light"] ${appStyle}`, {
   vars: {
-    '--affine-noise-opacity': '0.2',
+    '--affine-noise-opacity': '0.06',
   },
 });
 globalStyle(`html[data-theme="dark"] ${appStyle}`, {
@@ -100,7 +101,7 @@ export const mainContainerStyle = style({
     },
     '&[data-client-border="false"][data-is-desktop="true"][data-side-bar-open="true"]':
       {
-        borderTopLeftRadius: 6,
+        borderTopLeftRadius: 'var(--affine-radius-xs)',
       },
     '&[data-client-border="false"][data-is-desktop="true"]': {
       borderTop: `0.5px solid ${cssVar('borderColor')}`,
