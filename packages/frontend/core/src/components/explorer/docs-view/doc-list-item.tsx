@@ -25,10 +25,12 @@ import {
   type SVGProps,
   useCallback,
   useContext,
+  useEffect,
+  useRef,
 } from 'react';
 
 import { PagePreview } from '../../page-list/page-content-preview';
-import { DocExplorerContext } from '../context';
+import { DocExplorerContext, type DocExplorerContextType } from '../context';
 import { quickActions } from '../quick-actions.constants';
 import * as styles from './doc-list-item.css';
 import { MoreMenuButton, MoreMenuContent } from './more-menu';
@@ -150,6 +152,9 @@ export const DocListItem = ({ ...props }: DocListItemProps) => {
     [contextValue, handleMultiSelect, prevCheckAnchorId, props, selectMode]
   );
 
+  const isPartOfMultiSelect =
+    !!selectMode && selectedDocIds.includes(props.docId);
+
   const { dragRef, CustomDragPreview } = useDraggable<AffineDNDData>(
     () => ({
       canDrag: true,
@@ -161,10 +166,36 @@ export const DocListItem = ({ ...props }: DocListItemProps) => {
         from: {
           at: 'all-docs:list',
         },
+        ...(isPartOfMultiSelect ? { docIds: selectedDocIds } : {}),
       },
     }),
-    [props.docId]
+    [props.docId, isPartOfMultiSelect, selectedDocIds]
   );
+
+  // Ref to the always-rendered, off-screen multi-drag preview element.
+  // We override the native drag image in a dragstart listener (registered
+  // AFTER atlaskit's listener so our setDragImage wins).
+  const multiDragPreviewRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const element = dragRef.current;
+    if (!element) return;
+    const onDragStart = (e: DragEvent) => {
+      // Read BehaviorSubject values synchronously — guaranteed current
+      const currentSelectMode = contextValue.selectMode$?.value;
+      const currentSelectedDocIds = contextValue.selectedDocIds$.value;
+      const isMulti =
+        !!currentSelectMode &&
+        currentSelectedDocIds.includes(props.docId) &&
+        currentSelectedDocIds.length > 1;
+      if (isMulti && multiDragPreviewRef.current && e.dataTransfer) {
+        // Override atlaskit's single-card preview with our stacked preview
+        e.dataTransfer.setDragImage(multiDragPreviewRef.current, 30, 25);
+      }
+    };
+    element.addEventListener('dragstart', onDragStart);
+    return () => element.removeEventListener('dragstart', onDragStart);
+  }, [contextValue, dragRef, props.docId]);
 
   return (
     <>
@@ -185,14 +216,90 @@ export const DocListItem = ({ ...props }: DocListItemProps) => {
         )}
       </WorkbenchLink>
       <CustomDragPreview>
-        <div className={styles.dragPreview}>
-          <RawDocIcon id={props.docId} className={styles.dragPreviewIcon} />
-          <RawDocTitle id={props.docId} />
-        </div>
+        <DocDragPreview docId={props.docId} contextValue={contextValue} />
       </CustomDragPreview>
+      {/* Off-screen live preview used as the native drag image for multi-drag.
+          Rendered by React so it's always up-to-date with selectedDocIds. */}
+      <div
+        ref={multiDragPreviewRef}
+        style={{
+          position: 'fixed',
+          top: -9999,
+          left: -9999,
+          pointerEvents: 'none',
+          zIndex: -1,
+        }}
+      >
+        {selectedDocIds.length > 1 && (
+          <MultiDocDragPreview
+            docIds={selectedDocIds}
+            primaryDocId={props.docId}
+          />
+        )}
+      </div>
     </>
   );
 };
+
+/**
+ * Reads the select-mode state directly from BehaviorSubject `.value` at
+ * render time. This is intentional: during the flushSync inside
+ * onGenerateDragPreview, useSyncExternalStore (which backs useLiveData) may
+ * return a stale snapshot, while `.value` on a BehaviorSubject is always
+ * synchronously current.
+ */
+const DocDragPreview = memo(function DocDragPreview({
+  docId,
+  contextValue,
+}: {
+  docId: string;
+  contextValue: DocExplorerContextType;
+}) {
+  const selectMode = contextValue.selectMode$?.value;
+  const selectedDocIds = contextValue.selectedDocIds$.value;
+  const isMulti =
+    !!selectMode && selectedDocIds.includes(docId) && selectedDocIds.length > 1;
+
+  if (isMulti) {
+    return <MultiDocDragPreview docIds={selectedDocIds} primaryDocId={docId} />;
+  }
+  return (
+    <div className={styles.dragPreview}>
+      <RawDocIcon id={docId} className={styles.dragPreviewIcon} />
+      <RawDocTitle id={docId} />
+    </div>
+  );
+});
+
+const CARD_STYLES = [
+  styles.multiDragPreviewCard0,
+  styles.multiDragPreviewCard1,
+  styles.multiDragPreviewCard2,
+] as const;
+
+const MultiDocDragPreview = memo(function MultiDocDragPreview({
+  docIds,
+  primaryDocId,
+}: {
+  docIds: string[];
+  primaryDocId: string;
+}) {
+  // Primary doc is always on top (front). Show up to 2 others behind it.
+  const others = docIds.filter(id => id !== primaryDocId).slice(0, 2);
+  const stack = [...others, primaryDocId]; // last = highest z-index (front)
+  const startStyleIndex = 3 - stack.length; // align to card0/1/2
+
+  return (
+    <div className={styles.multiDragPreviewContainer}>
+      {stack.map((id, i) => (
+        <div key={id} className={CARD_STYLES[startStyleIndex + i]}>
+          <RawDocIcon id={id} className={styles.dragPreviewIcon} />
+          <RawDocTitle id={id} />
+        </div>
+      ))}
+    </div>
+  );
+});
 
 const RawDocIcon = memo(function RawDocIcon({
   id,
@@ -221,10 +328,9 @@ const DragHandle = memo(function DragHandle({
   ...props
 }: HTMLProps<HTMLDivElement>) {
   const contextValue = useContext(DocExplorerContext);
-  const selectMode = useLiveData(contextValue.selectMode$);
   const showDragHandle = useLiveData(contextValue.showDragHandle$);
 
-  if (selectMode || !id || !showDragHandle) {
+  if (!id || !showDragHandle) {
     return null;
   }
 

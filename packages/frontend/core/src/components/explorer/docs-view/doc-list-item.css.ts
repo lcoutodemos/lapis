@@ -20,6 +20,65 @@ export const dragPreviewIcon = style({
   fontSize: 24,
 });
 
+// --- multi-doc drag preview (stacked cards) ---
+// NOTE: the native drag preview is a static bitmap snapshot captured by the
+// browser — CSS animations are NOT visible. Cards must render at their final
+// positions immediately so the snapshot shows the full stack.
+
+export const multiDragPreviewContainer = style({
+  position: 'relative',
+  width: 250,
+  height: 62,
+});
+
+const multiDragCard = style({
+  position: 'absolute',
+  top: 11,
+  left: 16,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  padding: '8px 16px 8px 12px',
+  maxWidth: 218,
+  overflow: 'hidden',
+  whiteSpace: 'nowrap',
+  background: cssVarV2.layer.background.primary,
+  borderRadius: 'var(--affine-radius-xs)',
+  border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
+  fontSize: 14,
+  transformOrigin: 'top left',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.13)',
+});
+
+/** back card — offset and rotated the most */
+export const multiDragPreviewCard0 = style([
+  multiDragCard,
+  {
+    zIndex: 0,
+    transform: 'translate(-10px, 8px) rotate(-5deg)',
+    opacity: 0.75,
+  },
+]);
+
+/** middle card */
+export const multiDragPreviewCard1 = style([
+  multiDragCard,
+  {
+    zIndex: 1,
+    transform: 'translate(-5px, 4px) rotate(-2.5deg)',
+    opacity: 0.88,
+  },
+]);
+
+/** front card — straight, full opacity */
+export const multiDragPreviewCard2 = style([
+  multiDragCard,
+  {
+    zIndex: 2,
+    opacity: 1,
+  },
+]);
+
 export const listViewRoot = style({
   padding: '0px 4px',
   width: '100%',
@@ -44,20 +103,18 @@ export const dragHandle = style({
   padding: '5px 2px',
   color: cssVarV2.icon.secondary,
 });
-export const listDragHandle = style([
-  dragHandle,
-  {
-    left: -4,
-    top: '50%',
-    transform: 'translateY(-50%) translateX(-100%)',
-    opacity: 0,
-    selectors: {
-      [`${listViewRoot}:hover &`]: {
-        opacity: 1,
-      },
+export const listDragHandle = style({
+  flexShrink: 0,
+  padding: '5px 2px',
+  color: cssVarV2.icon.secondary,
+  cursor: 'grab',
+  opacity: 0,
+  selectors: {
+    [`${listViewRoot}:hover &`]: {
+      opacity: 1,
     },
   },
-]);
+});
 export const listSelect = style({
   width: 20,
   height: 24,

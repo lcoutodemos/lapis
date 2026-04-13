@@ -25,6 +25,8 @@ export type AffineDNDEntity =
 export interface AffineDNDData extends DNDData {
   draggable: {
     entity?: AffineDNDEntity;
+    /** When multiple docs are selected and dragged together, all selected IDs are included here */
+    docIds?: string[];
     from?:
       | {
           at: 'navigation-panel:organize:folder-node';

@@ -288,6 +288,18 @@ const NavigationPanelFolderNodeFolder = ({
               type: 'link',
               target: data.source.data.entity?.type,
             });
+          } else if (
+            data.source.data.docIds &&
+            data.source.data.entity?.type === 'doc'
+          ) {
+            // Multi-doc drag: create a link for each selected doc
+            for (const docId of data.source.data.docIds) {
+              node.createLink('doc', docId, node.indexAt('before'));
+            }
+            track.$.navigationPanel.organize.createOrganizeItem({
+              type: 'link',
+              target: 'doc',
+            });
           } else {
             node.createLink(
               data.source.data.entity?.type,
@@ -365,6 +377,17 @@ const NavigationPanelFolderNodeFolder = ({
           track.$.navigationPanel.organize.moveOrganizeItem({
             type: data.source.data.entity?.type,
           });
+        } else if (
+          data.source.data.docIds &&
+          data.source.data.entity?.type === 'doc'
+        ) {
+          for (const docId of data.source.data.docIds) {
+            node.createLink('doc', docId, node.indexAt('before'));
+          }
+          track.$.navigationPanel.organize.createOrganizeItem({
+            type: 'link',
+            target: 'doc',
+          });
         } else {
           node.createLink(
             data.source.data.entity?.type,
@@ -425,6 +448,17 @@ const NavigationPanelFolderNodeFolder = ({
             track.$.navigationPanel.organize.moveOrganizeItem({
               type: 'link',
               target: data.source.data.entity?.type,
+            });
+          } else if (
+            data.source.data.docIds &&
+            data.source.data.entity?.type === 'doc'
+          ) {
+            for (const docId of data.source.data.docIds) {
+              node.createLink('doc', docId, node.indexAt(at, dropAtNode.id));
+            }
+            track.$.navigationPanel.organize.createOrganizeItem({
+              type: 'link',
+              target: 'doc',
             });
           } else {
             node.createLink(
