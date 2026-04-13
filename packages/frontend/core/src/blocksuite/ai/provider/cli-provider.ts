@@ -135,6 +135,10 @@ function promptViaCLI(
       let wakeUp: (() => void) | null = null;
       let done = false;
       let error: string | null = null;
+      // Track whether any text was streamed incrementally.
+      // If not, we fall back to the task_complete result text so the chat
+      // always shows something even when Claude spent the whole turn using tools.
+      let streamedText = false;
 
       const push = (chunk: string) => {
         chunks.push(chunk);
@@ -147,9 +151,16 @@ function promptViaCLI(
         console.info('[cli-provider] event', ev.type);
 
         if (ev.type === 'text_chunk' && ev.text) {
+          streamedText = true;
           push(ev.text);
         } else if (ev.type === 'task_complete') {
           console.info('[cli-provider] task_complete — stream done');
+          // If Claude only used tools and produced no streaming text, the
+          // result summary is the only human-readable response. Push it as a
+          // chunk so the chat panel always shows the assistant's reply.
+          if (!streamedText && ev.text) {
+            push(ev.text);
+          }
           done = true;
           wakeUp?.();
         } else if (ev.type === 'error') {
