@@ -50,6 +50,7 @@ import { configurePDFModule } from './pdf';
 import { configurePeekViewModule } from './peek-view';
 import { configurePermissionsModule } from './permissions';
 import { configureQuickSearchModule } from './quicksearch';
+import { configureScheduledTaskModule } from './scheduled-task';
 import { configSearchMenuModule } from './search-menu';
 import { configureShareDocsModule } from './share-doc';
 import { configureShareSettingModule } from './share-setting';
@@ -134,4 +135,5 @@ export function configureCommonModules(framework: Framework) {
   configureDocSummaryModule(framework);
   configurePaywallModule(framework);
   configureIconPickerModule(framework);
+  configureScheduledTaskModule(framework);
 }

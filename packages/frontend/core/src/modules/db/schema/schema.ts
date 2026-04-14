@@ -82,6 +82,47 @@ export const AFFiNE_WORKSPACE_USERDATA_DB_SCHEMA = {
     integrationId: f.string(),
     refMeta: f.json(),
   },
+  scheduledTask: {
+    id: f.string().primaryKey().optional().default(nanoid),
+    name: f.string(),
+    prompt: f.string(),
+    frequencyType: f
+      .enum('daily', 'weekdays', 'weekly', 'monthly', 'custom')
+      .optional()
+      .default(() => 'daily'),
+    /** JSON array of day-of-week numbers (0=Sun … 6=Sat) used when frequencyType=custom */
+    selectedDays: f.json<number[]>().optional(),
+    /** HH:MM in local time */
+    localTime: f.string().optional(),
+    timezone: f.string().optional(),
+    status: f
+      .enum('active', 'paused', 'needs-setup', 'failed')
+      .optional()
+      .default(() => 'needs-setup'),
+    outputMode: f
+      .enum('single-doc')
+      .optional()
+      .default(() => 'single-doc'),
+    destinationDocId: f.string().optional(),
+    /** JSON blob for provider/model/effort/webAccess settings */
+    providerConfig: f.json().optional(),
+    createdAt: f.string().optional(),
+    updatedAt: f.string().optional(),
+  },
+  scheduledRun: {
+    id: f.string().primaryKey().optional().default(nanoid),
+    taskId: f.string(),
+    scheduledFor: f.string().optional(),
+    startedAt: f.string().optional(),
+    finishedAt: f.string().optional(),
+    status: f
+      .enum('pending', 'running', 'completed', 'failed')
+      .optional()
+      .default(() => 'pending'),
+    summary: f.string().optional(),
+    /** JSON blob with error details when status=failed */
+    errorState: f.json().optional(),
+  },
 } as const satisfies DBSchemaBuilder;
 export type AFFiNEWorkspaceUserdataDbSchema =
   typeof AFFiNE_WORKSPACE_USERDATA_DB_SCHEMA;

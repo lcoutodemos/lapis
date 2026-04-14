@@ -33,7 +33,7 @@ import {
 import { AppSidebarService } from '../../app-sidebar';
 import { DesktopApiService } from '../../desktop-api';
 import { resolveLinkToDoc } from '../../navigation';
-import { iconNameToIcon } from '../../workbench/constants';
+import { iconNameToIcon, type ViewIconName } from '../../workbench/constants';
 import { DesktopStateSynchronizer } from '../../workbench/services/desktop-state-synchronizer';
 import {
   AppTabsHeaderService,
@@ -180,7 +180,7 @@ const WorkbenchView = ({
       <>
         <div className={styles.labelIcon}>
           {workbench.ready || !workbench.loaded ? (
-            iconNameToIcon[view.iconName ?? 'allDocs']
+            iconNameToIcon[(view.iconName ?? 'allDocs') as ViewIconName]
           ) : (
             <Loading />
           )}

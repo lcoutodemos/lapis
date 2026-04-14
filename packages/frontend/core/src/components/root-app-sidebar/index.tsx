@@ -20,6 +20,7 @@ import type { Store } from '@blocksuite/affine/store';
 import {
   AiOutlineIcon,
   AllDocsIcon,
+  DateTimeIcon,
   ImportIcon,
   SettingsIcon,
 } from '@blocksuite/icons/rc';
@@ -82,6 +83,20 @@ const AllDocsButton = () => {
       <span data-testid="all-pages">
         {t['com.affine.workspaceSubPath.all']()}
       </span>
+    </MenuLinkItem>
+  );
+};
+
+const ScheduledButton = () => {
+  const { workbenchService } = useServices({ WorkbenchService });
+  const workbench = workbenchService.workbench;
+  const active = useLiveData(
+    workbench.location$.selector(location => location.pathname === '/scheduled')
+  );
+
+  return (
+    <MenuLinkItem icon={<DateTimeIcon />} active={active} to={'/scheduled'}>
+      <span data-testid="scheduled-tasks">Scheduled</span>
     </MenuLinkItem>
   );
 };
@@ -211,6 +226,7 @@ export const RootAppSidebar = memo((): ReactElement => {
         </div>
         <AllDocsButton />
         <AppSidebarJournalButton />
+        <ScheduledButton />
         {sessionStatus === 'authenticated' && <NotificationButton />}
         <AIChatButton />
       </SidebarContainer>
