@@ -63,6 +63,14 @@ function formatDate(iso?: string): string {
   }
 }
 
+// ── Run status (per-task runtime state from IPC events) ───────────────────────
+
+interface LiveRunState {
+  status: 'running' | 'completed' | 'failed';
+  summary?: string;
+  lastRunAt?: string;
+}
+
 // ── Create / Edit form ────────────────────────────────────────────────────────
 
 interface FormModalProps {
@@ -200,22 +208,27 @@ function FormModal({ task, onClose, onSave }: FormModalProps) {
 
 interface DetailPanelProps {
   task: ScheduledTask;
+  liveRun?: LiveRunState;
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onTogglePause: () => void;
+  onRunNow: () => void;
 }
 
 function DetailPanel({
   task,
+  liveRun,
   onClose,
   onEdit,
   onDelete,
   onTogglePause,
+  onRunNow,
 }: DetailPanelProps) {
   const scheduledTaskService = useService(ScheduledTaskService);
-  const runs = useLiveData(scheduledTaskService.runsForTask$(task.id));
-
+  const runs = useLiveData(
+    scheduledTaskService.runsForTask$(task.id)
+  ) as ScheduledRun[];
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.panel} onClick={e => e.stopPropagation()}>
@@ -255,6 +268,9 @@ function DetailPanel({
             <button className={styles.actionBtn} onClick={onTogglePause}>
               {task.status === 'paused' ? 'Resume' : 'Pause'}
             </button>
+            <button className={styles.actionBtn} onClick={onRunNow}>
+              Run now
+            </button>
             <button className={styles.actionBtnDanger} onClick={onDelete}>
               Delete
             </button>
@@ -274,32 +290,55 @@ function DetailPanel({
             </div>
           </div>
 
+          {/* Live run status (from IPC events) */}
+          {liveRun && (
+            <div>
+              <div className={styles.sectionLabel}>Current run</div>
+              <div className={styles.runRow}>
+                <span
+                  className={styles.runDot}
+                  style={{
+                    background: RUN_STATUS_COLORS[liveRun.status] ?? '#9AA0A6',
+                    animation:
+                      liveRun.status === 'running'
+                        ? 'pulse 1.2s infinite'
+                        : 'none',
+                  }}
+                />
+                <span className={styles.runDate}>
+                  {formatDate(liveRun.lastRunAt)}
+                </span>
+                {liveRun.summary && (
+                  <span className={styles.runSummary}>{liveRun.summary}</span>
+                )}
+                <span className={styles.runStatusText}>{liveRun.status}</span>
+              </div>
+            </div>
+          )}
+
           <div>
             <div className={styles.sectionLabel}>Recent runs</div>
-            {(runs as ScheduledRun[]).length === 0 ? (
+            {runs.length === 0 ? (
               <p className={styles.noRuns}>No runs yet.</p>
             ) : (
               <div className={styles.runsList}>
-                {(runs as ScheduledRun[])
-                  .slice(0, 8)
-                  .map((run: ScheduledRun) => (
-                    <div key={run.id} className={styles.runRow}>
-                      <span
-                        className={styles.runDot}
-                        style={{
-                          background:
-                            RUN_STATUS_COLORS[run.status] ?? '#9AA0A6',
-                        }}
-                      />
-                      <span className={styles.runDate}>
-                        {formatDate(run.scheduledFor ?? run.startedAt)}
-                      </span>
-                      {run.summary && (
-                        <span className={styles.runSummary}>{run.summary}</span>
-                      )}
-                      <span className={styles.runStatusText}>{run.status}</span>
-                    </div>
-                  ))}
+                {runs.slice(0, 8).map((run: ScheduledRun) => (
+                  <div key={run.id} className={styles.runRow}>
+                    <span
+                      className={styles.runDot}
+                      style={{
+                        background: RUN_STATUS_COLORS[run.status] ?? '#9AA0A6',
+                      }}
+                    />
+                    <span className={styles.runDate}>
+                      {formatDate(run.scheduledFor ?? run.startedAt)}
+                    </span>
+                    {run.summary && (
+                      <span className={styles.runSummary}>{run.summary}</span>
+                    )}
+                    <span className={styles.runStatusText}>{run.status}</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -313,10 +352,15 @@ function DetailPanel({
 
 interface TaskCardProps {
   task: ScheduledTask;
+  liveRun?: LiveRunState;
   onClick: () => void;
 }
 
-function TaskCard({ task, onClick }: TaskCardProps) {
+function TaskCard({ task, liveRun, onClick }: TaskCardProps) {
+  const displayColor = liveRun
+    ? (RUN_STATUS_COLORS[liveRun.status] ?? '#9AA0A6')
+    : (STATUS_COLORS[task.status] ?? '#9AA0A6');
+
   return (
     <div className={styles.card} onClick={onClick} role="button" tabIndex={0}>
       <div className={styles.cardTop}>
@@ -324,9 +368,9 @@ function TaskCard({ task, onClick }: TaskCardProps) {
         <span className={styles.statusChip}>
           <span
             className={styles.statusDot}
-            style={{ background: STATUS_COLORS[task.status] ?? '#9AA0A6' }}
+            style={{ background: displayColor }}
           />
-          {task.status.replace('-', ' ')}
+          {liveRun ? liveRun.status : task.status.replace('-', ' ')}
         </span>
       </div>
 
@@ -338,7 +382,11 @@ function TaskCard({ task, onClick }: TaskCardProps) {
         <span className={styles.cardMeta}>
           {task.createdAt ? `Created ${formatDate(task.createdAt)}` : ''}
         </span>
-        <span className={styles.cardMeta}>No runs yet</span>
+        <span className={styles.cardMeta}>
+          {liveRun?.lastRunAt
+            ? `Last run ${formatDate(liveRun.lastRunAt)}`
+            : 'No runs yet'}
+        </span>
       </div>
     </div>
   );
@@ -378,10 +426,61 @@ export function ScheduledPage() {
   const tasks = useLiveData(scheduledTaskService.tasks$);
 
   const [modal, setModal] = useState<ModalState>({ type: 'none' });
+  // Per-task live run status received from main-process IPC events
+  const [liveRuns, setLiveRuns] = useState<Record<string, LiveRunState>>({});
 
   const openCreate = useCallback(() => setModal({ type: 'create' }), []);
   const closeModal = useCallback(() => setModal({ type: 'none' }), []);
 
+  // ── Sync tasks to main-process scheduler ───────────────────────────────────
+  useEffect(() => {
+    scheduledTaskService.syncAllToScheduler(tasks as ScheduledTask[]);
+  }, [scheduledTaskService, tasks]);
+
+  // ── Subscribe to run events from main process ──────────────────────────────
+  useEffect(() => {
+    const cleanup = scheduledTaskService.setupRunEventListener();
+    return cleanup;
+  }, [scheduledTaskService]);
+
+  // ── Listen to raw IPC events for live card status ──────────────────────────
+  useEffect(() => {
+    const schedulerEvents = (window as any).__events?.scheduledTasks as
+      | { onRunEvent?: (cb: (p: unknown) => void) => () => void }
+      | undefined;
+    if (!schedulerEvents?.onRunEvent) return;
+
+    const cleanup = schedulerEvents.onRunEvent((raw: unknown) => {
+      const payload = raw as {
+        event: string;
+        run: {
+          status: string;
+          summary?: string;
+          startedAt?: string;
+          finishedAt?: string;
+        };
+        taskId: string;
+      };
+      const { event, run, taskId } = payload;
+      if (!taskId) return;
+
+      setLiveRuns(prev => ({
+        ...prev,
+        [taskId]: {
+          status: run.status as LiveRunState['status'],
+          summary: run.summary,
+          lastRunAt:
+            event === 'finished'
+              ? (run.finishedAt ?? run.startedAt)
+              : run.startedAt,
+        },
+      }));
+    });
+
+    return cleanup;
+  }, []);
+
+  // ── Modal mutations ────────────────────────────────────────────────────────
   const handleSave = useCallback(
     (input: CreateTaskInput) => {
       if (modal.type === 'edit') {
@@ -414,6 +513,13 @@ export function ScheduledPage() {
     [closeModal, scheduledTaskService]
   );
 
+  const handleRunNow = useCallback((taskId: string) => {
+    const schedulerApis = (window as any).__apis?.scheduledTasks as
+      | { runNow?: (args: { taskId: string }) => Promise<unknown> }
+      | undefined;
+    schedulerApis?.runNow?.({ taskId }).catch(() => {});
+  }, []);
+
   // Keep detail panel in sync if task data updates
   useEffect(() => {
     if (modal.type === 'detail' || modal.type === 'edit') {
@@ -443,6 +549,7 @@ export function ScheduledPage() {
               <TaskCard
                 key={task.id}
                 task={task}
+                liveRun={liveRuns[task.id]}
                 onClick={() => setModal({ type: 'detail', task })}
               />
             ))}
@@ -461,10 +568,12 @@ export function ScheduledPage() {
       {modal.type === 'detail' && (
         <DetailPanel
           task={modal.task}
+          liveRun={liveRuns[modal.task.id]}
           onClose={closeModal}
           onEdit={() => setModal({ type: 'edit', task: modal.task })}
           onDelete={() => handleDelete(modal.task.id)}
           onTogglePause={() => handleTogglePause(modal.task)}
+          onRunNow={() => handleRunNow(modal.task.id)}
         />
       )}
     </div>

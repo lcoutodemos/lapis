@@ -29,6 +29,7 @@ import { registerHandlers } from './handlers';
 import { logger } from './logger';
 import { registerProtocol } from './protocol';
 import { setupRecordingFeature } from './recording/feature';
+import { schedulerService } from './scheduled-task/singleton';
 import { registerSecurityRestrictions } from './security-restrictions';
 import { setupTrayState } from './tray';
 import { registerUpdater } from './updater';
@@ -129,8 +130,10 @@ async function bootstrapCLIBridge(): Promise<void> {
     const localPort = await localServer.start();
     cliBridge.setLocalServerPort(localPort);
     await cliBridge.init();
+    schedulerService.setLocalServerPort(localPort);
     beforeAppQuit(() => {
       cliBridge.destroy();
+      schedulerService.destroy();
       localServer.stop();
       localServerRef.current = null;
     });

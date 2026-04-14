@@ -8,6 +8,7 @@ import { configStorageHandlers } from './config-storage';
 import { findInPageHandlers } from './find-in-page';
 import { getLogFilePath, logger, revealLogFile } from './logger';
 import { recordingHandlers } from './recording';
+import { scheduledTaskHandlers } from './scheduled-task/handlers';
 import { checkSource } from './security-restrictions';
 import { sharedStorageHandlers } from './shared-storage';
 import { uiHandlers } from './ui/handlers';
@@ -44,6 +45,7 @@ export const allHandlers = {
   popup: popupHandlers,
   i18n: i18nHandlers,
   aiCli: aiCliHandlers,
+  scheduledTasks: scheduledTaskHandlers,
 };
 
 export const registerHandlers = () => {

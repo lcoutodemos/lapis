@@ -10,6 +10,7 @@ import { aiCliEvents } from './cli-bridge/events';
 import { logger } from './logger';
 import { powerEvents } from './power';
 import { recordingEvents } from './recording';
+import { scheduledTaskEvents } from './scheduled-task/events';
 import { checkSource } from './security-restrictions';
 import { sharedStorageEvents } from './shared-storage';
 import { uiEvents } from './ui/events';
@@ -25,6 +26,7 @@ export const allEvents = {
   popup: popupEvents,
   power: powerEvents,
   aiCli: aiCliEvents,
+  scheduledTasks: scheduledTaskEvents,
 };
 
 const subscriptions = new Map<number, Set<string>>();
