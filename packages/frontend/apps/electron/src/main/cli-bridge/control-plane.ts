@@ -236,6 +236,76 @@ export class CLIControlPlane {
     this.permissionHandler.respond(questionId, optionId);
   }
 
+  /**
+   * Run one prompt in a fresh, isolated session (no --resume).
+   * Used for scheduled tasks to prevent session state bleed.
+   * Creates its own transport instance to avoid concurrency conflicts.
+   * Uses the control plane's config (workingDir, localServerPort, model).
+   */
+  async runIsolated(
+    prompt: string,
+    opts: {
+      signal?: AbortSignal;
+      model?: string;
+      hookPort?: number;
+      onEvent?: (event: CLIEvent) => void;
+    }
+  ): Promise<{ success: boolean; summary: string; errorMessage?: string }> {
+    if (!this.initialized) await this.init();
+
+    // Fresh transport instance — avoids settingsFilePath state conflicts
+    // with a concurrent interactive session on this.transport
+    const transport = new ClaudeCodeTransport();
+
+    const startOpts: TransportStartOptions = {
+      // No sessionId: fresh isolated session, never resumes
+      workingDir: this.config.workingDir,
+      model: opts.model ?? this.selectedModel ?? this.config.model,
+      localServerPort: this.config.localServerPort,
+      maxTurns: this.config.maxTurns ?? 30,
+      hookPort: opts.hookPort,
+    };
+
+    let accumulated = '';
+    let sawCompletion = false;
+    let errorMessage: string | undefined;
+
+    try {
+      for await (const event of transport.prompt(
+        prompt,
+        startOpts,
+        opts.signal
+      )) {
+        if (opts.signal?.aborted) break;
+        opts.onEvent?.(event);
+
+        if (event.type === 'text_chunk') {
+          accumulated += event.text;
+        }
+        if (event.type === 'task_complete') {
+          sawCompletion = true;
+          if (event.text) accumulated = event.text;
+          break;
+        }
+        if (event.type === 'error') {
+          errorMessage = event.message;
+          break;
+        }
+      }
+
+      const paras = accumulated.trim().split(/\n{2,}/);
+      const summary =
+        (paras[paras.length - 1] ?? '').slice(0, 300) || 'Task completed.';
+      return {
+        success: sawCompletion && !errorMessage,
+        summary,
+        errorMessage,
+      };
+    } finally {
+      transport.stop();
+    }
+  }
+
   /** Teardown — called on app quit */
   destroy(): void {
     this.transport.stop();

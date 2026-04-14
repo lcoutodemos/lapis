@@ -1,18 +1,13 @@
 /**
- * ScheduledTaskRunner — executes one scheduled task via Claude Code CLI.
+ * ScheduledTaskRunner — executes one scheduled task via the shared CLIBridge.
  *
- * Key design decisions:
- *  - Fresh session per run (no --resume). Token cost is bounded, no context drift.
- *  - Uses ClaudeCodeTransport directly (same mechanism as interactive chat).
- *  - No PreToolUse permission hook — tasks are unattended; if a tool would be
- *    blocked the run fails cleanly rather than waiting for user input.
- *  - System hint is injected so Claude knows how to write to AFFiNE docs.
+ * Routes through CLIControlPlane.runIsolated() to ensure a single execution
+ * path for both interactive and scheduled prompts. Fresh session per run
+ * (no --resume), with an unattended permission handler that never blocks.
  */
 
-import { nanoid } from 'nanoid';
-
-import { ClaudeCodeTransport } from '../cli-bridge/transports/claude-code';
-import type { TransportStartOptions } from '../cli-bridge/transports/types';
+import { cliBridge } from '../cli-bridge/singleton';
+import type { CLIEvent } from '../cli-bridge/transports/types';
 import { logger } from '../logger';
 import type { SchedulerTask } from './types';
 
@@ -62,8 +57,7 @@ ${task.prompt}
 // ── Runner ────────────────────────────────────────────────────────────────────
 
 export interface RunOptions {
-  localServerPort?: number;
-  model?: string;
+  hookPort?: number;
 }
 
 export interface RunResult {
@@ -73,83 +67,30 @@ export interface RunResult {
 }
 
 export class ScheduledTaskRunner {
-  private readonly id = nanoid(6);
-
   async run(
     task: SchedulerTask,
     opts: RunOptions,
     onProgress?: (summary: string) => void,
     signal?: AbortSignal
   ): Promise<RunResult> {
-    const transport = new ClaudeCodeTransport();
     const envelope = buildEnvelope(task, new Date());
 
-    const transportOpts: TransportStartOptions = {
-      // Fresh session — intentionally no sessionId
-      sessionId: undefined,
-      localServerPort: opts.localServerPort,
-      // No hookPort — unattended runs skip the permission prompt server
-      hookPort: undefined,
-      model: opts.model ?? 'claude-sonnet-4-6',
-      maxTurns: 30,
-    };
-
-    logger.info(`[scheduler-runner:${this.id}] starting`, {
+    logger.info('[scheduler-runner] starting via control plane', {
       task: task.name,
-      model: transportOpts.model,
+      model: task.model ?? 'default',
     });
 
-    let accumulated = '';
-    let sawCompletion = false;
-
-    try {
-      for await (const event of transport.prompt(
-        envelope,
-        transportOpts,
-        signal
-      )) {
-        if (signal?.aborted) break;
-
-        if (event.type === 'text_chunk') {
-          accumulated += event.text;
-          // Provide rolling progress as the last 200 chars of accumulated text
-          onProgress?.(accumulated.slice(-200).trim());
+    const result = await cliBridge.runScheduled(envelope, {
+      signal,
+      model: task.model,
+      hookPort: opts.hookPort,
+      onEvent: (event: CLIEvent) => {
+        if (event.type === 'text_chunk' && onProgress) {
+          onProgress(event.text.slice(-200).trim());
         }
+      },
+    });
 
-        if (event.type === 'task_complete') {
-          sawCompletion = true;
-          if (event.text) accumulated = event.text;
-          break;
-        }
-
-        if (event.type === 'error') {
-          logger.warn(`[scheduler-runner:${this.id}] CLI error`, event.message);
-          return { success: false, summary: '', errorMessage: event.message };
-        }
-      }
-
-      if (signal?.aborted) {
-        return { success: false, summary: '', errorMessage: 'Aborted' };
-      }
-
-      // Extract a short summary from the last paragraph of the reply
-      const trimmed = accumulated.trim();
-      const paras = trimmed.split(/\n{2,}/);
-      const summary = (paras[paras.length - 1] ?? trimmed).slice(0, 300);
-
-      logger.info(`[scheduler-runner:${this.id}] done`, {
-        task: task.name,
-        completed: sawCompletion,
-        summaryLength: summary.length,
-      });
-
-      return { success: sawCompletion, summary: summary || 'Task completed.' };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      logger.error(`[scheduler-runner:${this.id}] exception`, err);
-      return { success: false, summary: '', errorMessage: msg };
-    } finally {
-      transport.stop();
-    }
+    return result;
   }
 }

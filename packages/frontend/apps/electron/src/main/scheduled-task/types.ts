@@ -10,7 +10,13 @@ export type FrequencyType =
   | 'monthly'
   | 'custom';
 export type TaskStatus = 'active' | 'paused' | 'needs-setup' | 'failed';
-export type RunStatus = 'pending' | 'running' | 'completed' | 'failed';
+export type RunStatus =
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'interrupted'
+  | 'missed';
 
 /** Minimal task representation the scheduler needs to set up timers. */
 export interface SchedulerTask {
@@ -24,6 +30,10 @@ export interface SchedulerTask {
   timezone: string;
   status: TaskStatus;
   destinationDocId?: string;
+  /** Model override for this task, e.g. 'claude-opus-4-6'. Defaults to control plane default. */
+  model?: string;
+  /** Allow web search in this task's run. Defaults to true. */
+  webAccess?: boolean;
 }
 
 export interface SchedulerRun {

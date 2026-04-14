@@ -10,7 +10,11 @@ import type { WebContents } from 'electron';
 import type { AFFiNECapability } from '../affine-capability/index';
 import type { SessionState } from './control-plane';
 import { CLIControlPlane } from './control-plane';
-import type { PermissionMode, RuntimeOptions } from './transports/types';
+import type {
+  CLIEvent,
+  PermissionMode,
+  RuntimeOptions,
+} from './transports/types';
 
 export type { RuntimeOptions, SessionState };
 
@@ -75,6 +79,19 @@ export class CLIBridge {
     permissionMode?: PermissionMode;
   }): void {
     this.controlPlane.updateRuntimeOptions(opts);
+  }
+
+  async runScheduled(
+    prompt: string,
+    opts: {
+      signal?: AbortSignal;
+      model?: string;
+      hookPort?: number;
+      onEvent?: (event: CLIEvent) => void;
+    }
+  ): Promise<{ success: boolean; summary: string; errorMessage?: string }> {
+    if (!this.initialized) await this.init();
+    return this.controlPlane.runIsolated(prompt, opts);
   }
 
   destroy(): void {

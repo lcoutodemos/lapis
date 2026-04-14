@@ -130,7 +130,7 @@ async function bootstrapCLIBridge(): Promise<void> {
     const localPort = await localServer.start();
     cliBridge.setLocalServerPort(localPort);
     await cliBridge.init();
-    schedulerService.setLocalServerPort(localPort);
+    await schedulerService.init();
     beforeAppQuit(() => {
       cliBridge.destroy();
       schedulerService.destroy();

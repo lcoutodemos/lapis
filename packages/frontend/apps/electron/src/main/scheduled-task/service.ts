@@ -1,21 +1,25 @@
 /**
- * SchedulerService — main-process orchestration layer for scheduled tasks.
+ * SchedulerService — main-process orchestration for scheduled tasks.
  *
  * Design:
- *  - In-memory task registry. Tasks are pushed from the renderer via IPC
- *    whenever they are created / updated / deleted there.
- *  - Single next-run timer (not a cron scan). Recomputed after every mutation
- *    or completed run.
- *  - One concurrent run at a time.  runNow() queues if a run is active.
- *  - Emits RxJS subjects that the event layer subscribes to and forwards to
- *    every subscribed renderer WebContents.
+ *  - Owns a JSON-backed SchedulerStore: tasks survive app restarts.
+ *  - Bootstrap on app start: loads store, marks interrupted runs,
+ *    schedules or catches up overdue tasks.
+ *  - Renderer syncAll/syncTask calls update the store (renderer is
+ *    authoritative for task config, main is authoritative for execution).
+ *  - Runs go through CLIBridge.runScheduled() — shared execution path
+ *    with interactive chat, isolated session per run.
+ *  - Own PermissionHandler in 'unattended' mode: never blocks waiting
+ *    for UI approval.
  */
 
 import { nanoid } from 'nanoid';
 import { Subject } from 'rxjs';
 
+import { PermissionHandler } from '../cli-bridge/permission-handler';
 import { logger } from '../logger';
 import { ScheduledTaskRunner } from './runner';
+import { SchedulerStore } from './store';
 import type {
   FrequencyType,
   RunEventPayload,
@@ -23,43 +27,32 @@ import type {
   SchedulerTask,
 } from './types';
 
-// ── Subjects (event bus) ──────────────────────────────────────────────────────
+// ── Event subjects ────────────────────────────────────────────────────────────
 
 export const scheduledTaskSubjects = {
   runEvent$: new Subject<RunEventPayload>(),
 };
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Next-run computation ──────────────────────────────────────────────────────
 
-/**
- * Compute the UTC timestamp of the next valid run after `after` for `task`.
- * Searches up to 8 days forward to handle weekly/custom frequencies.
- */
 function computeNextRunAt(task: SchedulerTask, after: number): number {
   const [hh, mm] = (task.localTime ?? '09:00')
     .split(':')
     .map(n => parseInt(n, 10));
   const tz = task.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const minMs = after + 60_000; // must be at least 1 min in the future
+  const minMs = after + 60_000;
 
   for (let dayOffset = 0; dayOffset <= 8; dayOffset++) {
     const probe = new Date(after + dayOffset * 86_400_000);
-
-    // Get the calendar date in target timezone (YYYY-MM-DD)
     const localDate = probe.toLocaleDateString('en-CA', { timeZone: tz });
     const runUtcMs = localTimeToUtc(localDate, hh, mm, tz);
-
     if (runUtcMs < minMs) continue;
     if (!isValidDay(runUtcMs, task.frequencyType, tz)) continue;
-
     return runUtcMs;
   }
-
-  // Fallback: 24 h from now
   return after + 86_400_000;
 }
 
-/** Map 'YYYY-MM-DD' + HH:MM + timezone to UTC ms (DST-safe). */
 function localTimeToUtc(
   dateStr: string,
   hh: number,
@@ -67,9 +60,7 @@ function localTimeToUtc(
   tz: string
 ): number {
   const [yr, mo, da] = dateStr.split('-').map(Number);
-  // Start with a naive UTC guess
   const roughUtc = Date.UTC(yr, mo - 1, da, hh, mm, 0, 0);
-  // Ask Intl what local hour/minute that naive UTC resolves to
   const dtf = new Intl.DateTimeFormat('en-US', {
     timeZone: tz,
     hour: '2-digit',
@@ -101,14 +92,13 @@ function isValidDay(utcMs: number, freq: FrequencyType, tz: string): boolean {
     Sat: 6,
   };
   const day = dayMap[dayName] ?? 0;
-
   switch (freq) {
     case 'daily':
       return true;
     case 'weekdays':
       return day >= 1 && day <= 5;
     case 'weekly':
-      return day === 1; // Monday
+      return day === 1;
     case 'monthly': {
       const dayOfMonth = parseInt(
         new Intl.DateTimeFormat('en-US', {
@@ -128,83 +118,56 @@ function isValidDay(utcMs: number, freq: FrequencyType, tz: string): boolean {
 
 // ── Service ───────────────────────────────────────────────────────────────────
 
+/** Overdue threshold: runs missed by < this are caught up immediately. */
+const CATCHUP_WINDOW_MS = 30 * 60_000; // 30 minutes
+
 export class SchedulerService {
-  private readonly tasks = new Map<string, SchedulerTask>();
+  private readonly store = new SchedulerStore();
   private readonly runner = new ScheduledTaskRunner();
+  private readonly permissionHandler = new PermissionHandler();
+
+  private hookPort: number | undefined;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private running = false;
   private abortController: AbortController | null = null;
-  private readonly runQueue: string[] = []; // taskIds queued for runNow
+  private readonly runQueue: string[] = [];
+  private initialized = false;
 
-  private localServerPort: number | undefined;
+  // ── Bootstrap ──────────────────────────────────────────────────────────
 
-  // ── Public API ─────────────────────────────────────────────────────────
+  async init(): Promise<void> {
+    if (this.initialized) return;
+    this.initialized = true;
 
-  setLocalServerPort(port: number): void {
-    this.localServerPort = port;
-  }
+    // Start the unattended permission server
+    this.hookPort = await this.permissionHandler.start();
+    this.permissionHandler.setPermissionMode('unattended');
+    logger.info('[scheduler] unattended permission hook port', this.hookPort);
 
-  /**
-   * Full-replace a task in the registry.
-   * Called when the renderer creates or updates a task.
-   */
-  syncTask(task: SchedulerTask): void {
-    this.tasks.set(task.id, task);
-    logger.info('[scheduler] syncTask', { id: task.id, status: task.status });
-    this.scheduleNext();
-  }
+    // Load persisted tasks and runs
+    await this.store.load();
 
-  /**
-   * Partial-update a task (e.g. status change without re-sending full payload).
-   */
-  patchTask(id: string, patch: Partial<SchedulerTask>): void {
-    const existing = this.tasks.get(id);
-    if (!existing) {
-      // Nothing to patch — renderer may follow up with a full syncTask
-      return;
-    }
-    this.tasks.set(id, { ...existing, ...patch, id });
-    logger.info('[scheduler] patchTask', { id, patch });
-    this.scheduleNext();
-  }
-
-  /** Remove a task from the registry. */
-  removeTask(id: string): void {
-    this.tasks.delete(id);
-    logger.info('[scheduler] removeTask', id);
-    this.scheduleNext();
-  }
-
-  /** Replace the entire in-memory registry (initial sync on page load). */
-  syncAll(tasks: SchedulerTask[]): void {
-    this.tasks.clear();
-    for (const t of tasks) {
-      this.tasks.set(t.id, t);
-    }
-    logger.info('[scheduler] syncAll', this.tasks.size, 'tasks');
-    this.scheduleNext();
-  }
-
-  /**
-   * Trigger an immediate run for `taskId`.
-   * If a run is already active, the request is queued and will execute after
-   * the current run finishes.
-   */
-  async runNow(taskId: string): Promise<{ ok: boolean }> {
-    const task = this.tasks.get(taskId);
-    if (!task) {
-      logger.warn('[scheduler] runNow: task not found', taskId);
-      return { ok: false };
+    // Mark any runs that were left in 'running' state
+    const interrupted = this.store.markInterruptedRuns();
+    for (const run of interrupted) {
+      scheduledTaskSubjects.runEvent$.next({
+        event: 'finished',
+        run,
+        taskId: run.taskId,
+      });
     }
 
-    if (this.running) {
-      this.runQueue.push(taskId);
-      logger.info('[scheduler] runNow queued', taskId);
-      return { ok: true };
-    }
+    // Catch up or skip overdue tasks
+    this.recoverOverdueTasks();
 
-    this.executeRun(task);
-    return { ok: true };
+    // Schedule the next timer
+    this.scheduleNext();
+
+    logger.info(
+      '[scheduler] initialized with',
+      this.store.listTasks().length,
+      'tasks'
+    );
   }
 
   destroy(): void {
@@ -213,10 +176,110 @@ export class SchedulerService {
       this.timer = null;
     }
     this.abortController?.abort();
-    this.tasks.clear();
+    this.permissionHandler.stop();
+  }
+
+  // ── Task registry (renderer-pushed) ────────────────────────────────────
+
+  syncTask(task: SchedulerTask): void {
+    this.store.upsertTask(task);
+    logger.info('[scheduler] syncTask', { id: task.id, status: task.status });
+    this.scheduleNext();
+  }
+
+  patchTask(id: string, patch: Partial<SchedulerTask>): void {
+    this.store.patchTask(id, patch);
+    logger.info('[scheduler] patchTask', { id, patch });
+    this.scheduleNext();
+  }
+
+  removeTask(id: string): void {
+    this.store.deleteTask(id);
+    logger.info('[scheduler] removeTask', id);
+    this.scheduleNext();
+  }
+
+  /**
+   * Full replacement from renderer. Uses a merge strategy: renderer config
+   * is authoritative but existing main-side status is preserved if newer.
+   */
+  syncAll(tasks: SchedulerTask[]): void {
+    this.store.replaceAll(tasks);
+    logger.info('[scheduler] syncAll', tasks.length, 'tasks');
+    this.scheduleNext();
+  }
+
+  async runNow(taskId: string): Promise<{ ok: boolean }> {
+    const task = this.store.getTask(taskId);
+    if (!task) {
+      logger.warn('[scheduler] runNow: task not found', taskId);
+      return { ok: false };
+    }
+    if (this.running) {
+      this.runQueue.push(taskId);
+      return { ok: true };
+    }
+    this.executeRun(task);
+    return { ok: true };
+  }
+
+  listTasks(): SchedulerTask[] {
+    return this.store.listTasks();
+  }
+
+  listRunsForTask(taskId: string): SchedulerRun[] {
+    return this.store.listRunsForTask(taskId);
   }
 
   // ── Scheduling ─────────────────────────────────────────────────────────
+
+  private recoverOverdueTasks(): void {
+    const now = Date.now();
+    for (const task of this.store.listTasks()) {
+      if (task.status !== 'active') continue;
+
+      // Find the last run for this task to compute next-due time
+      const runs = this.store.listRunsForTask(task.id);
+      const lastRunAt = runs[0]
+        ? new Date(runs[0].scheduledFor ?? runs[0].startedAt ?? 0).getTime()
+        : 0;
+
+      // What was the next scheduled run after the last one (or after app start)?
+      const nextDue = computeNextRunAt(task, lastRunAt || now - 86_400_000);
+
+      if (nextDue < now) {
+        const overdueBy = now - nextDue;
+        if (overdueBy < CATCHUP_WINDOW_MS) {
+          logger.info('[scheduler] catching up overdue task', {
+            task: task.name,
+            overdueByMinutes: Math.round(overdueBy / 60_000),
+          });
+          // Queue immediate run
+          this.runQueue.push(task.id);
+        } else {
+          // Too stale — record as missed, move on
+          logger.info('[scheduler] skipping stale task', {
+            task: task.name,
+            overdueByMinutes: Math.round(overdueBy / 60_000),
+          });
+          const missedRun: SchedulerRun = {
+            id: nanoid(),
+            taskId: task.id,
+            scheduledFor: new Date(nextDue).toISOString(),
+            status: 'missed',
+            finishedAt: new Date().toISOString(),
+            errorMessage: 'App was offline when this run was due',
+          };
+          this.store.createRun(missedRun);
+          scheduledTaskSubjects.runEvent$.next({
+            event: 'finished',
+            run: missedRun,
+            taskId: task.id,
+          });
+        }
+      }
+    }
+  }
 
   private scheduleNext(): void {
     if (this.timer) {
@@ -224,9 +287,9 @@ export class SchedulerService {
       this.timer = null;
     }
 
-    const activeTasks = [...this.tasks.values()].filter(
-      t => t.status === 'active'
-    );
+    const activeTasks = this.store
+      .listTasks()
+      .filter(t => t.status === 'active');
     if (activeTasks.length === 0) return;
 
     const now = Date.now();
@@ -244,15 +307,14 @@ export class SchedulerService {
     if (!earliestTask) return;
 
     const delay = Math.max(1_000, earliestAt - now);
-    const inMinutes = Math.round(delay / 60_000);
     logger.info(
-      `[scheduler] next run: "${earliestTask.name}" in ${inMinutes} min`
+      `[scheduler] next run: "${earliestTask.name}" in ${Math.round(delay / 60_000)} min`
     );
 
     const scheduledTaskId = earliestTask.id;
     this.timer = setTimeout(() => {
       this.timer = null;
-      const latest = this.tasks.get(scheduledTaskId);
+      const latest = this.store.getTask(scheduledTaskId);
       if (latest?.status === 'active') {
         this.executeRun(latest);
       } else {
@@ -265,7 +327,7 @@ export class SchedulerService {
 
   private executeRun(task: SchedulerTask): void {
     if (this.running) {
-      logger.warn('[scheduler] executeRun: already running, ignoring', task.id);
+      logger.warn('[scheduler] already running, ignoring', task.id);
       return;
     }
 
@@ -281,6 +343,7 @@ export class SchedulerService {
       status: 'running',
     };
 
+    this.store.createRun(run);
     scheduledTaskSubjects.runEvent$.next({
       event: 'started',
       run,
@@ -295,69 +358,75 @@ export class SchedulerService {
     this.runner
       .run(
         task,
-        { localServerPort: this.localServerPort },
+        { hookPort: this.hookPort },
         summary => {
-          scheduledTaskSubjects.runEvent$.next({
-            event: 'updated',
-            run: { ...run, summary, status: 'running' },
-            taskId: task.id,
+          const updated = this.store.updateRun(run.id, {
+            summary: summary.slice(0, 200),
           });
+          if (updated) {
+            scheduledTaskSubjects.runEvent$.next({
+              event: 'updated',
+              run: updated,
+              taskId: task.id,
+            });
+          }
         },
         signal
       )
       .then(result => {
-        const finishedRun: SchedulerRun = {
-          ...run,
+        const finishedRun = this.store.updateRun(run.id, {
           status: result.success ? 'completed' : 'failed',
           finishedAt: new Date().toISOString(),
           summary: result.summary,
           errorMessage: result.errorMessage,
-        };
-
-        scheduledTaskSubjects.runEvent$.next({
-          event: 'finished',
-          run: finishedRun,
-          taskId: task.id,
         });
-
+        if (finishedRun) {
+          scheduledTaskSubjects.runEvent$.next({
+            event: 'finished',
+            run: finishedRun,
+            taskId: task.id,
+          });
+        }
+        if (!result.success) {
+          this.store.patchTask(task.id, { status: 'failed' });
+          const updatedTask = this.store.getTask(task.id);
+          if (updatedTask) {
+            scheduledTaskSubjects.runEvent$.next({
+              event: 'taskFailed' as any,
+              run: finishedRun ?? run,
+              taskId: task.id,
+            });
+          }
+        }
         logger.info('[scheduler] run finished', {
           task: task.name,
           success: result.success,
         });
-
-        // If the task failed, mark it so the user sees a warning in the UI
-        if (!result.success) {
-          this.patchTask(task.id, { status: 'failed' });
-        }
       })
       .catch(err => {
         logger.error('[scheduler] run error', err);
+        const failedRun = this.store.updateRun(run.id, {
+          status: 'failed',
+          finishedAt: new Date().toISOString(),
+          errorMessage: String(err),
+        });
         scheduledTaskSubjects.runEvent$.next({
           event: 'finished',
-          run: {
-            ...run,
-            status: 'failed',
-            finishedAt: new Date().toISOString(),
-            errorMessage: String(err),
-          },
+          run: failedRun ?? { ...run, status: 'failed' },
           taskId: task.id,
         });
       })
       .finally(() => {
         this.running = false;
         this.abortController = null;
-
-        // Drain the runNow queue
         const nextTaskId = this.runQueue.shift();
         if (nextTaskId) {
-          const nextTask = this.tasks.get(nextTaskId);
+          const nextTask = this.store.getTask(nextTaskId);
           if (nextTask) {
             this.executeRun(nextTask);
             return;
           }
         }
-
-        // Otherwise resume the timer schedule
         this.scheduleNext();
       });
   }

@@ -4,7 +4,7 @@
  * into a single shape the control plane and renderer both consume.
  */
 
-export type PermissionMode = 'default' | 'ask' | 'allow-all';
+export type PermissionMode = 'default' | 'ask' | 'allow-all' | 'unattended';
 
 export interface CLIModel {
   id: string;

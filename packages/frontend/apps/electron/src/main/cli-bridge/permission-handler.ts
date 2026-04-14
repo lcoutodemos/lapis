@@ -166,6 +166,13 @@ export class PermissionHandler {
       return;
     }
 
+    // Unattended mode (scheduled tasks): approve all tools immediately — never block waiting for UI
+    if (this.permissionMode === 'unattended') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end('{}');
+      return;
+    }
+
     // In default/allow-all mode, also auto-approve write tools
     if (this.permissionMode !== 'ask' && WRITE_TOOLS.has(toolName)) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
