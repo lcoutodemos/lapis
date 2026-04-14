@@ -74,6 +74,10 @@ export interface TransportStartOptions {
   maxTurns?: number;
   /** Localhost port of the permission hook HTTP server */
   hookPort?: number;
+  /** Disable web browsing tools (WebFetch / WebSearch) for this session */
+  webAccess?: boolean;
+  /** Enable extended thinking for this session */
+  thinking?: boolean;
 }
 
 export interface ITransport {

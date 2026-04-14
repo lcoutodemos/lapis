@@ -243,8 +243,13 @@ export class ClaudeCodeTransport implements ITransport {
       'WebSearch',
       'Write',
     ];
-    if (safeTools.length > 0) {
-      args.push('--allowedTools', safeTools.join(','));
+    // Remove web tools if the task has disabled web access
+    const finalTools =
+      opts.webAccess === false
+        ? safeTools.filter(t => t !== 'WebFetch' && t !== 'WebSearch')
+        : safeTools;
+    if (finalTools.length > 0) {
+      args.push('--allowedTools', finalTools.join(','));
     }
 
     return args;

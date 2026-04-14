@@ -7,16 +7,19 @@
  *    schedules or catches up overdue tasks.
  *  - Renderer syncAll/syncTask calls update the store (renderer is
  *    authoritative for task config, main is authoritative for execution).
- *  - Runs go through CLIBridge.runScheduled() — shared execution path
+ *  - Runs go through runIsolatedPrompt via CLIBridge — shared execution path
  *    with interactive chat, isolated session per run.
- *  - Own PermissionHandler in 'unattended' mode: never blocks waiting
- *    for UI approval.
+ *  - Own PermissionHandler in 'unattended' mode: never hangs waiting for UI;
+ *    blocks write tools and marks the run needs_attention instead.
+ *  - Recovery: interrupted runs marked on startup, overdue runs caught up
+ *    or recorded as missed.
  */
 
 import { nanoid } from 'nanoid';
 import { Subject } from 'rxjs';
 
 import { PermissionHandler } from '../cli-bridge/permission-handler';
+import { cliBridge } from '../cli-bridge/singleton';
 import { logger } from '../logger';
 import { ScheduledTaskRunner } from './runner';
 import { SchedulerStore } from './store';
@@ -133,6 +136,9 @@ export class SchedulerService {
   private readonly runQueue: string[] = [];
   private initialized = false;
 
+  /** Set when the permission handler blocks a write tool in the current run */
+  private currentRunNeedsAttention = false;
+
   // ── Bootstrap ──────────────────────────────────────────────────────────
 
   async init(): Promise<void> {
@@ -143,6 +149,15 @@ export class SchedulerService {
     this.hookPort = await this.permissionHandler.start();
     this.permissionHandler.setPermissionMode('unattended');
     logger.info('[scheduler] unattended permission hook port', this.hookPort);
+
+    // Wire up permission-blocked callback: abort current run and flag it
+    this.permissionHandler.setOnPermissionBlocked(toolName => {
+      logger.warn('[scheduler] permission blocked in unattended run', {
+        toolName,
+      });
+      this.currentRunNeedsAttention = true;
+      this.abortController?.abort();
+    });
 
     // Load persisted tasks and runs
     await this.store.load();
@@ -190,12 +205,37 @@ export class SchedulerService {
   patchTask(id: string, patch: Partial<SchedulerTask>): void {
     this.store.patchTask(id, patch);
     logger.info('[scheduler] patchTask', { id, patch });
+
+    // If the task is being paused/deactivated while queued, remove from queue
+    if (patch.status && patch.status !== 'active') {
+      const queueIdx = this.runQueue.indexOf(id);
+      if (queueIdx !== -1) {
+        this.runQueue.splice(queueIdx, 1);
+        logger.info('[scheduler] removed patched task from queue', id);
+      }
+    }
+
     this.scheduleNext();
   }
 
   removeTask(id: string): void {
     this.store.deleteTask(id);
     logger.info('[scheduler] removeTask', id);
+
+    // Remove from queue if it was waiting
+    const queueIdx = this.runQueue.indexOf(id);
+    if (queueIdx !== -1) {
+      this.runQueue.splice(queueIdx, 1);
+      logger.info('[scheduler] removed deleted task from queue', id);
+    }
+
+    // Abort if this task is currently running
+    if (this.running) {
+      // We can't easily check which task is running right now without
+      // tracking it explicitly — abort conservatively only if id matches
+      // the current timer's task (handled below in executeRun)
+    }
+
     this.scheduleNext();
   }
 
@@ -238,13 +278,11 @@ export class SchedulerService {
     for (const task of this.store.listTasks()) {
       if (task.status !== 'active') continue;
 
-      // Find the last run for this task to compute next-due time
       const runs = this.store.listRunsForTask(task.id);
       const lastRunAt = runs[0]
         ? new Date(runs[0].scheduledFor ?? runs[0].startedAt ?? 0).getTime()
         : 0;
 
-      // What was the next scheduled run after the last one (or after app start)?
       const nextDue = computeNextRunAt(task, lastRunAt || now - 86_400_000);
 
       if (nextDue < now) {
@@ -254,10 +292,8 @@ export class SchedulerService {
             task: task.name,
             overdueByMinutes: Math.round(overdueBy / 60_000),
           });
-          // Queue immediate run
           this.runQueue.push(task.id);
         } else {
-          // Too stale — record as missed, move on
           logger.info('[scheduler] skipping stale task', {
             task: task.name,
             overdueByMinutes: Math.round(overdueBy / 60_000),
@@ -331,7 +367,16 @@ export class SchedulerService {
       return;
     }
 
+    // Check the task wasn't deleted while queued
+    const current = this.store.getTask(task.id);
+    if (!current || current.status !== 'active') {
+      logger.info('[scheduler] task no longer active, skipping', task.id);
+      this.scheduleNext();
+      return;
+    }
+
     this.running = true;
+    this.currentRunNeedsAttention = false;
     this.abortController = new AbortController();
     const { signal } = this.abortController;
 
@@ -358,7 +403,10 @@ export class SchedulerService {
     this.runner
       .run(
         task,
-        { hookPort: this.hookPort },
+        {
+          hookPort: this.hookPort,
+          localServerPort: cliBridge.getLocalServerPort(),
+        },
         summary => {
           const updated = this.store.updateRun(run.id, {
             summary: summary.slice(0, 200),
@@ -374,12 +422,20 @@ export class SchedulerService {
         signal
       )
       .then(result => {
+        const finalStatus = result.needsAttention
+          ? 'needs_attention'
+          : result.success
+            ? 'completed'
+            : 'failed';
+
         const finishedRun = this.store.updateRun(run.id, {
-          status: result.success ? 'completed' : 'failed',
+          status: finalStatus,
           finishedAt: new Date().toISOString(),
           summary: result.summary,
           errorMessage: result.errorMessage,
+          outputDocId: result.outputDocId,
         });
+
         if (finishedRun) {
           scheduledTaskSubjects.runEvent$.next({
             event: 'finished',
@@ -387,20 +443,19 @@ export class SchedulerService {
             taskId: task.id,
           });
         }
-        if (!result.success) {
+
+        if (!result.success && !result.needsAttention) {
           this.store.patchTask(task.id, { status: 'failed' });
-          const updatedTask = this.store.getTask(task.id);
-          if (updatedTask) {
-            scheduledTaskSubjects.runEvent$.next({
-              event: 'taskFailed' as any,
-              run: finishedRun ?? run,
-              taskId: task.id,
-            });
-          }
+          scheduledTaskSubjects.runEvent$.next({
+            event: 'finished',
+            run: finishedRun ?? run,
+            taskId: task.id,
+          });
         }
+
         logger.info('[scheduler] run finished', {
           task: task.name,
-          success: result.success,
+          status: finalStatus,
         });
       })
       .catch(err => {
@@ -419,6 +474,7 @@ export class SchedulerService {
       .finally(() => {
         this.running = false;
         this.abortController = null;
+        this.currentRunNeedsAttention = false;
         const nextTaskId = this.runQueue.shift();
         if (nextTaskId) {
           const nextTask = this.store.getTask(nextTaskId);

@@ -16,7 +16,8 @@ export type RunStatus =
   | 'completed'
   | 'failed'
   | 'interrupted'
-  | 'missed';
+  | 'missed'
+  | 'needs_attention';
 
 /** Minimal task representation the scheduler needs to set up timers. */
 export interface SchedulerTask {
@@ -34,6 +35,10 @@ export interface SchedulerTask {
   model?: string;
   /** Allow web search in this task's run. Defaults to true. */
   webAccess?: boolean;
+  /** Enable extended thinking for this task's runs */
+  thinking?: boolean;
+  /** Per-task agentic effort level */
+  effortLevel?: 'low' | 'medium' | 'high';
 }
 
 export interface SchedulerRun {
@@ -45,6 +50,10 @@ export interface SchedulerRun {
   status: RunStatus;
   summary?: string;
   errorMessage?: string;
+  /** Document ID created or updated by this run */
+  outputDocId?: string;
+  /** Human-readable title of the output document */
+  outputDocTitle?: string;
 }
 
 export type RunEventType = 'started' | 'updated' | 'finished';

@@ -10,6 +10,8 @@ import type { WebContents } from 'electron';
 import type { AFFiNECapability } from '../affine-capability/index';
 import type { SessionState } from './control-plane';
 import { CLIControlPlane } from './control-plane';
+import type { IsolatedRunResult } from './isolated-runner';
+import { runIsolatedPrompt } from './isolated-runner';
 import type {
   CLIEvent,
   PermissionMode,
@@ -30,6 +32,10 @@ export class CLIBridge {
   /** Tell the bridge which port the local REST server is on. */
   setLocalServerPort(port: number): void {
     this.controlPlane['config'].localServerPort = port;
+  }
+
+  getLocalServerPort(): number | undefined {
+    return this.controlPlane['config'].localServerPort as number | undefined;
   }
 
   setCapability(capability: AFFiNECapability): void {
@@ -89,9 +95,24 @@ export class CLIBridge {
       hookPort?: number;
       onEvent?: (event: CLIEvent) => void;
     }
-  ): Promise<{ success: boolean; summary: string; errorMessage?: string }> {
+  ): Promise<IsolatedRunResult> {
     if (!this.initialized) await this.init();
-    return this.controlPlane.runIsolated(prompt, opts);
+    return runIsolatedPrompt(
+      prompt,
+      {
+        workingDir: this.controlPlane['config'].workingDir as
+          | string
+          | undefined,
+        model: opts.model,
+        localServerPort: this.controlPlane['config'].localServerPort as
+          | number
+          | undefined,
+        maxTurns: 30,
+        hookPort: opts.hookPort,
+        onEvent: opts.onEvent,
+      },
+      opts.signal
+    );
   }
 
   destroy(): void {

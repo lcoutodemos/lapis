@@ -41,6 +41,9 @@ function toSchedulerTask(t: ScheduledTask) {
     timezone: t.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     status: t.status,
     destinationDocId: t.destinationDocId,
+    model: t.model,
+    webAccess: t.webAccess,
+    thinking: t.thinking,
   };
 }
 
@@ -176,6 +179,7 @@ export class ScheduledTaskService extends Service {
           status: string;
           summary?: string;
           errorMessage?: string;
+          outputDocId?: string;
         };
         taskId: string;
       };
@@ -204,6 +208,7 @@ export class ScheduledTaskService extends Service {
           finishedAt: run.finishedAt,
           status: run.status as any,
           summary: run.summary,
+          outputDocId: run.outputDocId,
           errorState: run.errorMessage
             ? { message: run.errorMessage }
             : undefined,

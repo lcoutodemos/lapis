@@ -78,6 +78,7 @@ export class PermissionHandler {
   private port = 0;
   private readonly pending = new Map<string, PendingPermission>();
   private onRequest?: (req: PermissionRequest) => void;
+  private onPermissionBlocked?: (toolName: string) => void;
   private permissionMode: PermissionMode = 'default';
 
   constructor() {
@@ -116,6 +117,10 @@ export class PermissionHandler {
   /** Register a callback that fires when a new permission request arrives */
   setOnRequest(cb: (req: PermissionRequest) => void) {
     this.onRequest = cb;
+  }
+
+  setOnPermissionBlocked(cb: (toolName: string) => void): void {
+    this.onPermissionBlocked = cb;
   }
 
   /** Called from the renderer (via IPC) when the user makes a decision */
@@ -166,8 +171,25 @@ export class PermissionHandler {
       return;
     }
 
-    // Unattended mode (scheduled tasks): approve all tools immediately — never block waiting for UI
+    // Unattended mode (scheduled tasks):
+    //  - ALWAYS_SAFE_TOOLS already approved above.
+    //  - Risky write tools are blocked; the run is marked needs_attention.
+    //  - All other tools (MCP, custom) are approved.
     if (this.permissionMode === 'unattended') {
+      if (WRITE_TOOLS.has(toolName)) {
+        logger.warn('[permission-handler] unattended: blocking write tool', {
+          toolName,
+        });
+        this.onPermissionBlocked?.(toolName);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            decision: 'block',
+            reason: `Tool '${toolName}' requires user approval and cannot run unattended. The scheduled run has been flagged as needs_attention.`,
+          })
+        );
+        return;
+      }
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end('{}');
       return;
