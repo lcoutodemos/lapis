@@ -7,11 +7,11 @@ import {
 } from '@affine/core/modules/scheduled-task';
 import { CloseIcon, DateTimeIcon, PlusIcon } from '@blocksuite/icons/rc';
 import { useLiveData, useService } from '@toeverything/infra';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import * as styles from './scheduled-page.css';
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const FREQUENCY_LABELS: Record<FrequencyType, string> = {
   daily: 'Daily',
@@ -21,26 +21,13 @@ const FREQUENCY_LABELS: Record<FrequencyType, string> = {
   custom: 'Custom',
 };
 
-function formatNextRun(task: ScheduledTask): string {
-  if (task.status === 'paused') return 'Paused';
-  if (task.status === 'needs-setup') return 'Setup needed';
-  if (!task.localTime) return FREQUENCY_LABELS[task.frequencyType];
-  return `${FREQUENCY_LABELS[task.frequencyType]} at ${task.localTime}`;
-}
-
-function formatRunDate(iso?: string): string {
-  if (!iso) return '—';
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return iso;
-  }
-}
+const FREQUENCY_OPTIONS: FrequencyType[] = [
+  'daily',
+  'weekdays',
+  'weekly',
+  'monthly',
+  'custom',
+];
 
 const STATUS_COLORS: Record<string, string> = {
   active: '#34A853',
@@ -56,23 +43,35 @@ const RUN_STATUS_COLORS: Record<string, string> = {
   pending: '#9AA0A6',
 };
 
-// ── Create / Edit modal ────────────────────────────────────────────────────────
+function formatSchedule(task: ScheduledTask): string {
+  const freq = FREQUENCY_LABELS[task.frequencyType];
+  if (!task.localTime) return freq;
+  return `${freq} · ${task.localTime}`;
+}
 
-interface TaskModalProps {
+function formatDate(iso?: string): string {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return iso;
+  }
+}
+
+// ── Create / Edit form ────────────────────────────────────────────────────────
+
+interface FormModalProps {
   task?: ScheduledTask;
   onClose: () => void;
   onSave: (input: CreateTaskInput) => void;
 }
 
-const FREQUENCY_OPTIONS: FrequencyType[] = [
-  'daily',
-  'weekdays',
-  'weekly',
-  'monthly',
-  'custom',
-];
-
-function TaskModal({ task, onClose, onSave }: TaskModalProps) {
+function FormModal({ task, onClose, onSave }: FormModalProps) {
   const [name, setName] = useState(task?.name ?? '');
   const [prompt, setPrompt] = useState(task?.prompt ?? '');
   const [frequencyType, setFrequencyType] = useState<FrequencyType>(
@@ -92,22 +91,23 @@ function TaskModal({ task, onClose, onSave }: TaskModalProps) {
       localTime,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
-  }, [canSave, name, prompt, frequencyType, localTime, onSave]);
+  }, [canSave, frequencyType, localTime, name, onSave, prompt]);
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <span className={styles.modalTitle}>
-            {task ? 'Edit task' : 'New scheduled task'}
-          </span>
-          <button className={styles.modalClose} onClick={onClose}>
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.panel} onClick={e => e.stopPropagation()}>
+        <div className={styles.panelHeader}>
+          <div className={styles.panelTitleBlock}>
+            <span className={styles.panelTitle}>
+              {task ? 'Edit task' : 'New scheduled task'}
+            </span>
+          </div>
+          <button className={styles.panelClose} onClick={onClose}>
             <CloseIcon />
           </button>
         </div>
 
-        <div className={styles.modalBody}>
-          {/* Name */}
+        <div className={styles.panelBody}>
           <div className={styles.formField}>
             <label className={styles.formLabel}>Task name</label>
             <input
@@ -119,19 +119,17 @@ function TaskModal({ task, onClose, onSave }: TaskModalProps) {
             />
           </div>
 
-          {/* Prompt */}
           <div className={styles.formField}>
             <label className={styles.formLabel}>What should AI do?</label>
             <textarea
               className={styles.formTextarea}
-              placeholder="e.g. Search online for new trending AI launches and papers from the past week. Write a concise summary with key takeaways."
+              placeholder="Describe the task in plain language…"
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
               rows={4}
             />
           </div>
 
-          {/* Frequency + Time */}
           <div className={styles.formRow}>
             <div className={styles.formField}>
               <label className={styles.formLabel}>Frequency</label>
@@ -160,7 +158,6 @@ function TaskModal({ task, onClose, onSave }: TaskModalProps) {
             </div>
           </div>
 
-          {/* Advanced toggle */}
           <button
             className={styles.advancedToggle}
             onClick={() => setShowAdvanced(v => !v)}
@@ -199,135 +196,155 @@ function TaskModal({ task, onClose, onSave }: TaskModalProps) {
   );
 }
 
-// ── Task detail ────────────────────────────────────────────────────────────────
+// ── Task detail panel ─────────────────────────────────────────────────────────
 
-interface TaskDetailProps {
+interface DetailPanelProps {
   task: ScheduledTask;
+  onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onTogglePause: () => void;
 }
 
-function TaskDetail({
+function DetailPanel({
   task,
+  onClose,
   onEdit,
   onDelete,
   onTogglePause,
-}: TaskDetailProps) {
+}: DetailPanelProps) {
   const scheduledTaskService = useService(ScheduledTaskService);
   const runs = useLiveData(scheduledTaskService.runsForTask$(task.id));
 
-  const statusColor = STATUS_COLORS[task.status] ?? '#9AA0A6';
-
   return (
-    <div className={styles.detail}>
-      {/* Header */}
-      <div className={styles.detailHeader}>
-        <div className={styles.detailActions}>
-          <button className={styles.actionButton} onClick={onEdit}>
-            Edit
-          </button>
-          <button className={styles.actionButton} onClick={onTogglePause}>
-            {task.status === 'paused' ? 'Resume' : 'Pause'}
-          </button>
-          <button className={styles.actionButtonDanger} onClick={onDelete}>
-            Delete
-          </button>
-        </div>
-        <h1 className={styles.detailTitle}>{task.name}</h1>
-        <div className={styles.detailStatusRow}>
-          <span className={styles.detailStatusChip}>
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: statusColor,
-                display: 'inline-block',
-              }}
-            />
-            {task.status.replace('-', ' ')}
-          </span>
-          <span className={styles.detailScheduleLine}>
-            {formatNextRun(task)}
-          </span>
-          {task.timezone && (
-            <span className={styles.detailScheduleLine}>· {task.timezone}</span>
-          )}
-        </div>
-      </div>
-
-      <div className={styles.divider} />
-
-      {/* Prompt */}
-      <div className={styles.section}>
-        <span className={styles.sectionLabel}>Instruction</span>
-        <div className={styles.sectionContent}>{task.prompt}</div>
-      </div>
-
-      {/* Output */}
-      <div className={styles.section}>
-        <span className={styles.sectionLabel}>Output</span>
-        {task.destinationDocId ? (
-          <div className={styles.sectionContent}>
-            <span className={styles.destinationLink}>
-              📄 Destination document
-            </span>
-          </div>
-        ) : (
-          <div className={styles.sectionContent} style={{ opacity: 0.6 }}>
-            A destination document will be created on first run.
-          </div>
-        )}
-      </div>
-
-      {/* Runs */}
-      <div className={styles.section}>
-        <span className={styles.sectionLabel}>Recent runs</span>
-        {runs.length === 0 ? (
-          <p className={styles.noRuns}>No runs yet.</p>
-        ) : (
-          <div className={styles.runsList}>
-            {(runs as ScheduledRun[]).slice(0, 10).map((run: ScheduledRun) => (
-              <div key={run.id} className={styles.runItem}>
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.panel} onClick={e => e.stopPropagation()}>
+        <div className={styles.panelHeader}>
+          <div className={styles.panelTitleBlock}>
+            <h2 className={styles.panelTitle}>{task.name}</h2>
+            <div className={styles.panelMeta}>
+              <span className={styles.statusChip}>
                 <span
-                  className={styles.runStatusDot}
+                  className={styles.statusDot}
                   style={{
-                    background: RUN_STATUS_COLORS[run.status] ?? '#9AA0A6',
+                    background: STATUS_COLORS[task.status] ?? '#9AA0A6',
                   }}
                 />
-                <span className={styles.runItemDate}>
-                  {formatRunDate(run.scheduledFor ?? run.startedAt)}
-                </span>
-                {run.summary && (
-                  <span className={styles.runItemSummary}>{run.summary}</span>
-                )}
-                <span className={styles.runItemStatus}>{run.status}</span>
-              </div>
-            ))}
+                {task.status.replace('-', ' ')}
+              </span>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: 'var(--affine-text-secondary-color)',
+                }}
+              >
+                {formatSchedule(task)}
+              </span>
+            </div>
           </div>
-        )}
+          <button className={styles.panelClose} onClick={onClose}>
+            <CloseIcon />
+          </button>
+        </div>
+
+        <div className={styles.panelBody}>
+          <div className={styles.panelActions}>
+            <button className={styles.actionBtn} onClick={onEdit}>
+              Edit
+            </button>
+            <button className={styles.actionBtn} onClick={onTogglePause}>
+              {task.status === 'paused' ? 'Resume' : 'Pause'}
+            </button>
+            <button className={styles.actionBtnDanger} onClick={onDelete}>
+              Delete
+            </button>
+          </div>
+
+          <div>
+            <div className={styles.sectionLabel}>Instruction</div>
+            <div className={styles.sectionText}>{task.prompt}</div>
+          </div>
+
+          <div>
+            <div className={styles.sectionLabel}>Output</div>
+            <div className={styles.sectionText} style={{ opacity: 0.7 }}>
+              {task.destinationDocId
+                ? '📄 Destination document linked'
+                : 'A destination document will be created on first run.'}
+            </div>
+          </div>
+
+          <div>
+            <div className={styles.sectionLabel}>Recent runs</div>
+            {(runs as ScheduledRun[]).length === 0 ? (
+              <p className={styles.noRuns}>No runs yet.</p>
+            ) : (
+              <div className={styles.runsList}>
+                {(runs as ScheduledRun[])
+                  .slice(0, 8)
+                  .map((run: ScheduledRun) => (
+                    <div key={run.id} className={styles.runRow}>
+                      <span
+                        className={styles.runDot}
+                        style={{
+                          background:
+                            RUN_STATUS_COLORS[run.status] ?? '#9AA0A6',
+                        }}
+                      />
+                      <span className={styles.runDate}>
+                        {formatDate(run.scheduledFor ?? run.startedAt)}
+                      </span>
+                      {run.summary && (
+                        <span className={styles.runSummary}>{run.summary}</span>
+                      )}
+                      <span className={styles.runStatusText}>{run.status}</span>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// ── Empty state ────────────────────────────────────────────────────────────────
+// ── Task card ─────────────────────────────────────────────────────────────────
 
-const EXAMPLES = [
-  {
-    icon: '🔭',
-    text: 'Every Monday, search online for new trending AI launches and summarise the week.',
-  },
-  {
-    icon: '🎨',
-    text: 'Every morning, find fresh design inspiration for ambient computing products.',
-  },
-  {
-    icon: '📰',
-    text: "Every Friday, summarise the week's top news in my industry.",
-  },
-];
+interface TaskCardProps {
+  task: ScheduledTask;
+  onClick: () => void;
+}
+
+function TaskCard({ task, onClick }: TaskCardProps) {
+  return (
+    <div className={styles.card} onClick={onClick} role="button" tabIndex={0}>
+      <div className={styles.cardTop}>
+        <span className={styles.cardName}>{task.name}</span>
+        <span className={styles.statusChip}>
+          <span
+            className={styles.statusDot}
+            style={{ background: STATUS_COLORS[task.status] ?? '#9AA0A6' }}
+          />
+          {task.status.replace('-', ' ')}
+        </span>
+      </div>
+
+      <div className={styles.cardSchedule}>{formatSchedule(task)}</div>
+
+      <div className={styles.cardPrompt}>{task.prompt}</div>
+
+      <div className={styles.cardFooter}>
+        <span className={styles.cardMeta}>
+          {task.createdAt ? `Created ${formatDate(task.createdAt)}` : ''}
+        </span>
+        <span className={styles.cardMeta}>No runs yet</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
 
 function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
   return (
@@ -335,117 +352,54 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
       <div className={styles.emptyIcon}>
         <DateTimeIcon />
       </div>
-      <h2 className={styles.emptyTitle}>Schedule AI tasks</h2>
+      <h2 className={styles.emptyTitle}>No scheduled tasks yet</h2>
       <p className={styles.emptyDescription}>
-        Write what you want AI to do, pick when to run it, and AFFiNE takes care
-        of the rest — writing results directly into a document.
+        Write what you want AI to do, pick when to run it, and AFFiNE writes the
+        results directly into a document.
       </p>
-      <div className={styles.emptyExamples}>
-        {EXAMPLES.map((ex, i) => (
-          <div key={i} className={styles.emptyExample}>
-            <span className={styles.emptyExampleIcon}>{ex.icon}</span>
-            <span className={styles.emptyExampleText}>{ex.text}</span>
-          </div>
-        ))}
-      </div>
-      <button className={styles.emptyPrimaryCta} onClick={onCreateClick}>
+      <button className={styles.emptyCta} onClick={onCreateClick}>
         <PlusIcon />
-        Create your first task
+        Create a task
       </button>
     </div>
   );
 }
 
-// ── Rail item ──────────────────────────────────────────────────────────────────
+// ── Root ──────────────────────────────────────────────────────────────────────
 
-function RailItem({
-  task,
-  active,
-  onClick,
-}: {
-  task: ScheduledTask;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const dotClass =
-    task.status === 'active'
-      ? styles.statusDotActive
-      : task.status === 'paused'
-        ? styles.statusDotPaused
-        : task.status === 'failed'
-          ? styles.statusDotFailed
-          : styles.statusDotSetup;
-
-  return (
-    <div
-      className={styles.railItem}
-      data-active={active}
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={e => e.key === 'Enter' && onClick()}
-    >
-      <span className={styles.railItemName}>{task.name}</span>
-      <div className={styles.railItemMeta}>
-        <span className={styles.railItemStatus}>
-          <span className={dotClass} />
-          <span style={{ color: STATUS_COLORS[task.status], fontSize: 11 }}>
-            {task.status.replace('-', ' ')}
-          </span>
-        </span>
-        <span className={styles.railItemNextRun}>{formatNextRun(task)}</span>
-      </div>
-    </div>
-  );
-}
-
-// ── Root component ─────────────────────────────────────────────────────────────
+type ModalState =
+  | { type: 'none' }
+  | { type: 'create' }
+  | { type: 'detail'; task: ScheduledTask }
+  | { type: 'edit'; task: ScheduledTask };
 
 export function ScheduledPage() {
   const scheduledTaskService = useService(ScheduledTaskService);
   const tasks = useLiveData(scheduledTaskService.tasks$);
 
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [editingTask, setEditingTask] = useState<ScheduledTask | undefined>();
+  const [modal, setModal] = useState<ModalState>({ type: 'none' });
 
-  const selectedTask = useMemo(
-    () =>
-      (tasks as ScheduledTask[]).find(
-        (t: ScheduledTask) => t.id === selectedTaskId
-      ) ?? null,
-    [tasks, selectedTaskId]
-  );
-
-  const openCreate = useCallback(() => {
-    setEditingTask(undefined);
-    setShowModal(true);
-  }, []);
-
-  const openEdit = useCallback((task: ScheduledTask) => {
-    setEditingTask(task);
-    setShowModal(true);
-  }, []);
+  const openCreate = useCallback(() => setModal({ type: 'create' }), []);
+  const closeModal = useCallback(() => setModal({ type: 'none' }), []);
 
   const handleSave = useCallback(
     (input: CreateTaskInput) => {
-      if (editingTask) {
-        scheduledTaskService.updateTask(editingTask.id, input);
+      if (modal.type === 'edit') {
+        scheduledTaskService.updateTask(modal.task.id, input);
       } else {
-        const newTask = scheduledTaskService.createTask(input);
-        setSelectedTaskId(newTask.id);
+        scheduledTaskService.createTask(input);
       }
-      setShowModal(false);
+      closeModal();
     },
-    [editingTask, scheduledTaskService]
+    [closeModal, modal, scheduledTaskService]
   );
 
   const handleDelete = useCallback(
     (taskId: string) => {
       scheduledTaskService.deleteTask(taskId);
-      if (selectedTaskId === taskId) setSelectedTaskId(null);
+      closeModal();
     },
-    [scheduledTaskService, selectedTaskId]
+    [closeModal, scheduledTaskService]
   );
 
   const handleTogglePause = useCallback(
@@ -455,71 +409,62 @@ export function ScheduledPage() {
       } else {
         scheduledTaskService.pauseTask(task.id);
       }
+      closeModal();
     },
-    [scheduledTaskService]
+    [closeModal, scheduledTaskService]
   );
 
-  // auto-select first task when none is selected
+  // Keep detail panel in sync if task data updates
   useEffect(() => {
-    if (!selectedTaskId && tasks.length > 0) {
-      setSelectedTaskId((tasks as ScheduledTask[])[0].id);
+    if (modal.type === 'detail' || modal.type === 'edit') {
+      const updated = (tasks as ScheduledTask[]).find(
+        (t: ScheduledTask) => t.id === modal.task.id
+      );
+      if (!updated) closeModal();
     }
-  }, [selectedTaskId, tasks]);
+  }, [closeModal, modal, tasks]);
 
   return (
     <div className={styles.root}>
-      {/* Left rail */}
-      <div className={styles.rail}>
-        <div className={styles.railHeader}>
-          <span className={styles.railTitle}>Scheduled</span>
-          <button
-            className={styles.createButton}
-            onClick={openCreate}
-            title="New scheduled task"
-          >
-            <PlusIcon />
-          </button>
-        </div>
-        <div className={styles.railList}>
-          {tasks.length === 0 ? (
-            <p className={styles.railEmpty}>
-              No tasks yet.
-              <br />
-              Create one to get started.
-            </p>
-          ) : (
-            (tasks as ScheduledTask[]).map((task: ScheduledTask) => (
-              <RailItem
-                key={task.id}
-                task={task}
-                active={selectedTaskId === task.id}
-                onClick={() => setSelectedTaskId(task.id)}
-              />
-            ))
-          )}
-        </div>
+      <div className={styles.header}>
+        <span className={styles.pageTitle}>Scheduled</span>
+        <button className={styles.newTaskButton} onClick={openCreate}>
+          <PlusIcon />
+          New task
+        </button>
       </div>
 
-      {/* Main panel */}
-      <div className={styles.main}>
-        {!selectedTask ? (
+      <div className={styles.scrollArea}>
+        {(tasks as ScheduledTask[]).length === 0 ? (
           <EmptyState onCreateClick={openCreate} />
         ) : (
-          <TaskDetail
-            task={selectedTask}
-            onEdit={() => openEdit(selectedTask)}
-            onDelete={() => handleDelete(selectedTask.id)}
-            onTogglePause={() => handleTogglePause(selectedTask)}
-          />
+          <div className={styles.grid}>
+            {(tasks as ScheduledTask[]).map((task: ScheduledTask) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onClick={() => setModal({ type: 'detail', task })}
+              />
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Create / Edit modal */}
-      {showModal && (
-        <TaskModal
-          task={editingTask}
-          onClose={() => setShowModal(false)}
+      {(modal.type === 'create' || modal.type === 'edit') && (
+        <FormModal
+          task={modal.type === 'edit' ? modal.task : undefined}
+          onClose={closeModal}
           onSave={handleSave}
+        />
+      )}
+
+      {modal.type === 'detail' && (
+        <DetailPanel
+          task={modal.task}
+          onClose={closeModal}
+          onEdit={() => setModal({ type: 'edit', task: modal.task })}
+          onDelete={() => handleDelete(modal.task.id)}
+          onTogglePause={() => handleTogglePause(modal.task)}
         />
       )}
     </div>

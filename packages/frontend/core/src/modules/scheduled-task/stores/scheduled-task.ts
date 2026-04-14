@@ -52,7 +52,7 @@ export class ScheduledTaskStore extends Store {
       localTime: input.localTime,
       timezone:
         input.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
-      status: 'needs-setup',
+      status: 'active',
       outputMode: 'single-doc',
       destinationDocId: input.destinationDocId,
       providerConfig: input.providerConfig,

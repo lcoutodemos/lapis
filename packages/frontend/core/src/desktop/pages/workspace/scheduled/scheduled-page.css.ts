@@ -1,124 +1,113 @@
 import { cssVarV2 } from '@toeverything/theme/v2';
 import { style } from '@vanilla-extract/css';
 
-// ── Layout ────────────────────────────────────────────────────────────────────
+// ── Page shell ────────────────────────────────────────────────────────────────
 
 export const root = style({
   display: 'flex',
-  flexDirection: 'row',
+  flexDirection: 'column',
   height: '100%',
   width: '100%',
   overflow: 'hidden',
   background: cssVarV2.layer.background.primary,
 });
 
-// ── Left Rail ─────────────────────────────────────────────────────────────────
-
-export const rail = style({
-  width: 280,
-  minWidth: 220,
-  maxWidth: 320,
-  flexShrink: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  borderRight: `1px solid ${cssVarV2.layer.insideBorder.border}`,
-  background: cssVarV2.layer.background.secondary,
-  overflow: 'hidden',
-});
-
-export const railHeader = style({
+export const header = style({
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'center',
   justifyContent: 'space-between',
-  padding: '20px 16px 12px 20px',
+  padding: '28px 40px 0 40px',
   flexShrink: 0,
 });
 
-export const railTitle = style({
-  fontSize: 13,
-  fontWeight: 600,
-  letterSpacing: '0.02em',
-  textTransform: 'uppercase',
-  color: cssVarV2.text.secondary,
-});
-
-export const createButton = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 28,
-  height: 28,
-  borderRadius: 6,
-  border: 'none',
-  background: 'transparent',
-  color: cssVarV2.icon.primary,
-  cursor: 'pointer',
-  transition: 'background 0.15s ease',
-  selectors: {
-    '&:hover': {
-      background: cssVarV2.layer.background.hoverOverlay,
-    },
-  },
-});
-
-export const railList = style({
-  flex: 1,
-  overflowY: 'auto',
-  padding: '0 8px 8px 8px',
-});
-
-export const railEmpty = style({
-  padding: '16px 12px',
-  fontSize: 13,
-  color: cssVarV2.text.tertiary,
-  textAlign: 'center',
-  lineHeight: '1.5',
-});
-
-// ── Rail Task Item ─────────────────────────────────────────────────────────────
-
-export const railItem = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 3,
-  padding: '8px 10px',
-  borderRadius: 8,
-  cursor: 'pointer',
-  transition: 'background 0.12s ease',
-  selectors: {
-    '&:hover': {
-      background: cssVarV2.layer.background.hoverOverlay,
-    },
-    '&[data-active="true"]': {
-      background: cssVarV2.layer.background.hoverOverlay,
-    },
-  },
-});
-
-export const railItemName = style({
-  fontSize: 13,
-  fontWeight: 500,
+export const pageTitle = style({
+  fontSize: 22,
+  fontWeight: 700,
   color: cssVarV2.text.primary,
-  overflow: 'hidden',
-  whiteSpace: 'nowrap',
-  textOverflow: 'ellipsis',
+  letterSpacing: '-0.4px',
 });
 
-export const railItemMeta = style({
-  display: 'flex',
-  flexDirection: 'row',
+export const newTaskButton = style({
+  display: 'inline-flex',
   alignItems: 'center',
   gap: 6,
+  padding: '7px 16px',
+  borderRadius: 8,
+  fontSize: 13,
+  fontWeight: 500,
+  border: 'none',
+  background: cssVarV2.button.primary,
+  color: cssVarV2.button.pureWhiteText,
+  cursor: 'pointer',
+  transition: 'opacity 0.15s ease',
+  selectors: {
+    '&:hover': { opacity: 0.88 },
+  },
 });
 
-export const railItemStatus = style({
+export const scrollArea = style({
+  flex: 1,
+  overflowY: 'auto',
+  padding: '24px 40px 40px 40px',
+});
+
+// ── Card grid ─────────────────────────────────────────────────────────────────
+
+export const grid = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+  gap: 16,
+});
+
+// ── Task card ─────────────────────────────────────────────────────────────────
+
+export const card = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 10,
+  padding: '18px 20px',
+  borderRadius: 12,
+  background: cssVarV2.layer.background.secondary,
+  border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
+  cursor: 'pointer',
+  transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+  selectors: {
+    '&:hover': {
+      borderColor: cssVarV2.layer.insideBorder.primaryBorder,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    },
+  },
+});
+
+export const cardTop = style({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'flex-start',
+  justifyContent: 'space-between',
+  gap: 8,
+});
+
+export const cardName = style({
+  fontSize: 15,
+  fontWeight: 600,
+  color: cssVarV2.text.primary,
+  letterSpacing: '-0.2px',
+  lineHeight: '1.3',
+});
+
+export const statusChip = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: 4,
+  padding: '2px 8px',
+  borderRadius: 20,
   fontSize: 11,
   fontWeight: 500,
-  lineHeight: '16px',
+  flexShrink: 0,
+  background: cssVarV2.layer.background.primary,
+  border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
+  color: cssVarV2.text.secondary,
 });
 
 export const statusDot = style({
@@ -128,356 +117,151 @@ export const statusDot = style({
   flexShrink: 0,
 });
 
-export const statusDotActive = style([statusDot, { background: '#34A853' }]);
-export const statusDotPaused = style([
-  statusDot,
-  { background: cssVarV2.icon.secondary },
-]);
-export const statusDotFailed = style([statusDot, { background: '#EA4335' }]);
-export const statusDotSetup = style([statusDot, { background: '#FBBC04' }]);
+export const cardSchedule = style({
+  fontSize: 12,
+  color: cssVarV2.text.secondary,
+  fontWeight: 500,
+});
 
-export const railItemNextRun = style({
+export const cardPrompt = style({
+  fontSize: 13,
+  color: cssVarV2.text.secondary,
+  lineHeight: '1.55',
+  overflow: 'hidden',
+  display: '-webkit-box',
+  WebkitLineClamp: 3,
+  WebkitBoxOrient: 'vertical',
+});
+
+export const cardFooter = style({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingTop: 10,
+  borderTop: `1px solid ${cssVarV2.layer.insideBorder.border}`,
+  marginTop: 2,
+});
+
+export const cardMeta = style({
   fontSize: 11,
   color: cssVarV2.text.tertiary,
-  marginLeft: 'auto',
 });
 
-// ── Main Panel ────────────────────────────────────────────────────────────────
-
-export const main = style({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  overflow: 'hidden',
-});
-
-// ── Empty State ───────────────────────────────────────────────────────────────
+// ── Empty state ───────────────────────────────────────────────────────────────
 
 export const emptyState = style({
-  flex: 1,
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: 48,
-  gap: 0,
+  padding: '80px 40px',
   textAlign: 'center',
-  maxWidth: 480,
+  maxWidth: 440,
   margin: '0 auto',
-  width: '100%',
 });
 
 export const emptyIcon = style({
-  fontSize: 48,
+  fontSize: 40,
   color: cssVarV2.icon.secondary,
-  marginBottom: 20,
-  opacity: 0.7,
+  marginBottom: 16,
+  opacity: 0.55,
 });
 
 export const emptyTitle = style({
-  fontSize: 20,
+  fontSize: 18,
   fontWeight: 600,
   color: cssVarV2.text.primary,
   letterSpacing: '-0.3px',
-  marginBottom: 10,
+  marginBottom: 8,
 });
 
 export const emptyDescription = style({
   fontSize: 14,
   color: cssVarV2.text.secondary,
   lineHeight: '1.6',
-  marginBottom: 28,
+  marginBottom: 24,
 });
 
-export const emptyExamples = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8,
-  alignSelf: 'stretch',
-  marginBottom: 32,
-});
-
-export const emptyExample = style({
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: 10,
-  padding: '10px 14px',
-  borderRadius: 8,
-  background: cssVarV2.layer.background.secondary,
-  border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
-  textAlign: 'left',
-});
-
-export const emptyExampleIcon = style({
-  fontSize: 16,
-  flexShrink: 0,
-  marginTop: 1,
-});
-
-export const emptyExampleText = style({
-  fontSize: 13,
-  color: cssVarV2.text.secondary,
-  lineHeight: '1.5',
-});
-
-export const emptyPrimaryCta = style({
+export const emptyCta = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: 6,
-  padding: '9px 20px',
+  padding: '8px 20px',
   borderRadius: 8,
-  background: cssVarV2.button.primary,
-  color: cssVarV2.button.pureWhiteText,
   fontSize: 14,
   fontWeight: 500,
   border: 'none',
+  background: cssVarV2.button.primary,
+  color: cssVarV2.button.pureWhiteText,
   cursor: 'pointer',
   transition: 'opacity 0.15s ease',
   selectors: {
-    '&:hover': {
-      opacity: 0.88,
-    },
+    '&:hover': { opacity: 0.88 },
   },
 });
 
-// ── Task Detail ───────────────────────────────────────────────────────────────
+// ── Detail / form overlay ─────────────────────────────────────────────────────
 
-export const detail = style({
-  flex: 1,
-  overflowY: 'auto',
-  padding: '32px 40px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 28,
-});
-
-export const detailHeader = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 6,
-});
-
-export const detailActions = style({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 8,
-  marginBottom: 4,
-});
-
-export const detailTitle = style({
-  fontSize: 24,
-  fontWeight: 700,
-  color: cssVarV2.text.primary,
-  letterSpacing: '-0.4px',
-  lineHeight: '1.3',
-});
-
-export const detailStatusRow = style({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 10,
-});
-
-export const detailStatusChip = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 5,
-  padding: '2px 8px',
-  borderRadius: 20,
-  fontSize: 12,
-  fontWeight: 500,
-  background: cssVarV2.layer.background.secondary,
-  color: cssVarV2.text.secondary,
-  border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
-});
-
-export const detailScheduleLine = style({
-  fontSize: 13,
-  color: cssVarV2.text.secondary,
-});
-
-// ── Section ───────────────────────────────────────────────────────────────────
-
-export const section = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8,
-});
-
-export const sectionLabel = style({
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: '0.06em',
-  textTransform: 'uppercase',
-  color: cssVarV2.text.tertiary,
-});
-
-export const sectionContent = style({
-  fontSize: 14,
-  color: cssVarV2.text.primary,
-  lineHeight: '1.6',
-  padding: '12px 14px',
-  background: cssVarV2.layer.background.secondary,
-  borderRadius: 8,
-  border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
-  whiteSpace: 'pre-wrap',
-});
-
-export const destinationLink = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-  fontSize: 14,
-  color: cssVarV2.text.link,
-  cursor: 'pointer',
-  textDecoration: 'none',
-  selectors: {
-    '&:hover': {
-      textDecoration: 'underline',
-    },
-  },
-});
-
-// ── Runs list ─────────────────────────────────────────────────────────────────
-
-export const runsList = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 6,
-});
-
-export const runItem = style({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 10,
-  padding: '8px 12px',
-  borderRadius: 8,
-  background: cssVarV2.layer.background.secondary,
-  border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
-});
-
-export const runStatusDot = style({
-  width: 7,
-  height: 7,
-  borderRadius: '50%',
-  flexShrink: 0,
-});
-
-export const runItemDate = style({
-  fontSize: 13,
-  fontWeight: 500,
-  color: cssVarV2.text.primary,
-  minWidth: 0,
-  flex: 1,
-});
-
-export const runItemStatus = style({
-  fontSize: 12,
-  color: cssVarV2.text.secondary,
-  flexShrink: 0,
-});
-
-export const runItemSummary = style({
-  fontSize: 12,
-  color: cssVarV2.text.tertiary,
-  overflow: 'hidden',
-  whiteSpace: 'nowrap',
-  textOverflow: 'ellipsis',
-  maxWidth: 300,
-});
-
-export const noRuns = style({
-  fontSize: 13,
-  color: cssVarV2.text.tertiary,
-  padding: '10px 0',
-});
-
-// ── Action buttons ────────────────────────────────────────────────────────────
-
-export const actionButton = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-  padding: '6px 14px',
-  borderRadius: 7,
-  fontSize: 13,
-  fontWeight: 500,
-  border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
-  background: cssVarV2.layer.background.primary,
-  color: cssVarV2.text.primary,
-  cursor: 'pointer',
-  transition: 'background 0.12s ease',
-  selectors: {
-    '&:hover': {
-      background: cssVarV2.layer.background.hoverOverlay,
-    },
-  },
-});
-
-export const actionButtonDanger = style([
-  actionButton,
-  {
-    color: '#EA4335',
-    selectors: {
-      '&:hover': {
-        background: 'rgba(234,67,53,0.06)',
-      },
-    },
-  },
-]);
-
-export const divider = style({
-  height: 1,
-  background: cssVarV2.layer.insideBorder.border,
-  margin: '4px 0',
-});
-
-// ── Create / Edit Modal ───────────────────────────────────────────────────────
-
-export const modalOverlay = style({
+export const overlay = style({
   position: 'fixed',
   inset: 0,
-  background: 'rgba(0,0,0,0.35)',
+  background: 'rgba(0,0,0,0.3)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   zIndex: 1000,
+  backdropFilter: 'blur(2px)',
 });
 
-export const modal = style({
-  width: 500,
-  maxWidth: '94vw',
-  maxHeight: '90vh',
+export const panel = style({
+  width: 560,
+  maxWidth: '92vw',
+  maxHeight: '86vh',
   display: 'flex',
   flexDirection: 'column',
   background: cssVarV2.layer.background.primary,
-  borderRadius: 12,
+  borderRadius: 14,
   border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
-  boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+  boxShadow: '0 12px 40px rgba(0,0,0,0.16)',
   overflow: 'hidden',
 });
 
-export const modalHeader = style({
+export const panelHeader = style({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'flex-start',
+  justifyContent: 'space-between',
+  padding: '22px 24px 16px 24px',
+  borderBottom: `1px solid ${cssVarV2.layer.insideBorder.border}`,
+  flexShrink: 0,
+  gap: 12,
+});
+
+export const panelTitleBlock = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+  flex: 1,
+  minWidth: 0,
+});
+
+export const panelTitle = style({
+  fontSize: 18,
+  fontWeight: 700,
+  color: cssVarV2.text.primary,
+  letterSpacing: '-0.3px',
+});
+
+export const panelMeta = style({
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'center',
-  justifyContent: 'space-between',
-  padding: '18px 20px 14px 20px',
-  borderBottom: `1px solid ${cssVarV2.layer.insideBorder.border}`,
-  flexShrink: 0,
+  gap: 8,
+  flexWrap: 'wrap',
 });
 
-export const modalTitle = style({
-  fontSize: 16,
-  fontWeight: 600,
-  color: cssVarV2.text.primary,
-  letterSpacing: '-0.2px',
-});
-
-export const modalClose = style({
+export const panelClose = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -489,22 +273,129 @@ export const modalClose = style({
   color: cssVarV2.icon.secondary,
   cursor: 'pointer',
   fontSize: 18,
+  flexShrink: 0,
   transition: 'background 0.12s ease',
   selectors: {
-    '&:hover': {
-      background: cssVarV2.layer.background.hoverOverlay,
-    },
+    '&:hover': { background: cssVarV2.layer.background.hoverOverlay },
   },
 });
 
-export const modalBody = style({
+export const panelBody = style({
   flex: 1,
   overflowY: 'auto',
-  padding: '20px',
+  padding: '20px 24px',
   display: 'flex',
   flexDirection: 'column',
-  gap: 16,
+  gap: 20,
 });
+
+export const panelActions = style({
+  display: 'flex',
+  flexDirection: 'row',
+  gap: 8,
+});
+
+export const sectionLabel = style({
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: cssVarV2.text.tertiary,
+  marginBottom: 6,
+});
+
+export const sectionText = style({
+  fontSize: 14,
+  color: cssVarV2.text.primary,
+  lineHeight: '1.6',
+  padding: '11px 14px',
+  background: cssVarV2.layer.background.secondary,
+  borderRadius: 8,
+  border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
+  whiteSpace: 'pre-wrap',
+});
+
+export const runsList = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+});
+
+export const runRow = style({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 10,
+  padding: '8px 12px',
+  borderRadius: 8,
+  background: cssVarV2.layer.background.secondary,
+  border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
+});
+
+export const runDot = style({
+  width: 7,
+  height: 7,
+  borderRadius: '50%',
+  flexShrink: 0,
+});
+
+export const runDate = style({
+  fontSize: 13,
+  fontWeight: 500,
+  color: cssVarV2.text.primary,
+  flex: 1,
+});
+
+export const runSummary = style({
+  fontSize: 12,
+  color: cssVarV2.text.tertiary,
+  overflow: 'hidden',
+  whiteSpace: 'nowrap',
+  textOverflow: 'ellipsis',
+  maxWidth: 200,
+});
+
+export const runStatusText = style({
+  fontSize: 12,
+  color: cssVarV2.text.secondary,
+  flexShrink: 0,
+});
+
+export const noRuns = style({
+  fontSize: 13,
+  color: cssVarV2.text.tertiary,
+  padding: '4px 0',
+});
+
+export const actionBtn = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 5,
+  padding: '6px 14px',
+  borderRadius: 7,
+  fontSize: 13,
+  fontWeight: 500,
+  border: `1px solid ${cssVarV2.layer.insideBorder.border}`,
+  background: cssVarV2.layer.background.primary,
+  color: cssVarV2.text.primary,
+  cursor: 'pointer',
+  transition: 'background 0.12s ease',
+  selectors: {
+    '&:hover': { background: cssVarV2.layer.background.hoverOverlay },
+  },
+});
+
+export const actionBtnDanger = style([
+  actionBtn,
+  {
+    color: '#EA4335',
+    selectors: {
+      '&:hover': { background: 'rgba(234,67,53,0.06)' },
+    },
+  },
+]);
+
+// ── Form (create / edit) ──────────────────────────────────────────────────────
 
 export const formField = style({
   display: 'flex',
@@ -516,7 +407,6 @@ export const formLabel = style({
   fontSize: 12,
   fontWeight: 500,
   color: cssVarV2.text.secondary,
-  letterSpacing: '0.02em',
 });
 
 export const formInput = style({
@@ -530,12 +420,8 @@ export const formInput = style({
   outline: 'none',
   transition: 'border-color 0.15s ease',
   selectors: {
-    '&:focus': {
-      borderColor: cssVarV2.layer.insideBorder.primaryBorder,
-    },
-    '&::placeholder': {
-      color: cssVarV2.text.placeholder,
-    },
+    '&:focus': { borderColor: cssVarV2.layer.insideBorder.primaryBorder },
+    '&::placeholder': { color: cssVarV2.text.placeholder },
   },
 });
 
@@ -543,7 +429,7 @@ export const formTextarea = style([
   formInput,
   {
     resize: 'vertical',
-    minHeight: 80,
+    minHeight: 90,
     fontFamily: 'inherit',
     lineHeight: '1.5',
   },
@@ -578,9 +464,7 @@ export const advancedToggle = style({
   border: 'none',
   padding: '2px 0',
   selectors: {
-    '&:hover': {
-      color: cssVarV2.text.primary,
-    },
+    '&:hover': { color: cssVarV2.text.primary },
   },
 });
 
@@ -589,7 +473,7 @@ export const modalFooter = style({
   flexDirection: 'row',
   justifyContent: 'flex-end',
   gap: 8,
-  padding: '14px 20px',
+  padding: '14px 24px',
   borderTop: `1px solid ${cssVarV2.layer.insideBorder.border}`,
   flexShrink: 0,
 });
@@ -609,7 +493,7 @@ export const btnPrimary = style({
   transition: 'opacity 0.15s ease',
   selectors: {
     '&:hover': { opacity: 0.88 },
-    '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
+    '&:disabled': { opacity: 0.45, cursor: 'not-allowed' },
   },
 });
 
