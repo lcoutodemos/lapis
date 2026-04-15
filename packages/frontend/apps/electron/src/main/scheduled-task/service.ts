@@ -15,6 +15,7 @@
  *    or recorded as missed.
  */
 
+import { powerMonitor } from 'electron';
 import { nanoid } from 'nanoid';
 import { Subject } from 'rxjs';
 
@@ -121,8 +122,14 @@ function isValidDay(utcMs: number, freq: FrequencyType, tz: string): boolean {
 
 // ── Service ───────────────────────────────────────────────────────────────────
 
-/** Overdue threshold: runs missed by < this are caught up immediately. */
-const CATCHUP_WINDOW_MS = 30 * 60_000; // 30 minutes
+/**
+ * How far back we scan for missed slots on startup/resume.
+ * Slots older than this are ignored (prevent backfilling months of runs).
+ */
+const MAX_RECOVERY_LOOKBACK_MS = 7 * 86_400_000; // 7 days
+
+/** Max overdue slots to process per task per recovery pass (avoids loops). */
+const MAX_CATCHUP_SLOTS = 14;
 
 export class SchedulerService {
   private readonly store = new SchedulerStore();
@@ -133,7 +140,11 @@ export class SchedulerService {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private running = false;
   private abortController: AbortController | null = null;
-  private readonly runQueue: string[] = [];
+
+  /** Queue entries carry the intended slot time so run records are accurate. */
+  private readonly runQueue: Array<{ taskId: string; scheduledFor: string }> =
+    [];
+
   private initialized = false;
 
   /** Set when the permission handler blocks a write tool in the current run */
@@ -172,11 +183,20 @@ export class SchedulerService {
       });
     }
 
-    // Catch up or skip overdue tasks
+    // Catch up or skip overdue tasks, then immediately start any catch-up runs
     this.recoverOverdueTasks();
+    this.drainQueueIfIdle();
 
-    // Schedule the next timer
+    // Schedule the next timer for future occurrences
     this.scheduleNext();
+
+    // Re-check on system resume — Node timers do not fire while the machine sleeps
+    powerMonitor.on('resume', () => {
+      logger.info('[scheduler] system resumed, re-checking overdue tasks');
+      this.recoverOverdueTasks();
+      this.drainQueueIfIdle();
+      this.scheduleNext();
+    });
 
     logger.info(
       '[scheduler] initialized with',
@@ -208,7 +228,7 @@ export class SchedulerService {
 
     // If the task is being paused/deactivated while queued, remove from queue
     if (patch.status && patch.status !== 'active') {
-      const queueIdx = this.runQueue.indexOf(id);
+      const queueIdx = this.runQueue.findIndex(e => e.taskId === id);
       if (queueIdx !== -1) {
         this.runQueue.splice(queueIdx, 1);
         logger.info('[scheduler] removed patched task from queue', id);
@@ -223,7 +243,7 @@ export class SchedulerService {
     logger.info('[scheduler] removeTask', id);
 
     // Remove from queue if it was waiting
-    const queueIdx = this.runQueue.indexOf(id);
+    const queueIdx = this.runQueue.findIndex(e => e.taskId === id);
     if (queueIdx !== -1) {
       this.runQueue.splice(queueIdx, 1);
       logger.info('[scheduler] removed deleted task from queue', id);
@@ -255,11 +275,12 @@ export class SchedulerService {
       logger.warn('[scheduler] runNow: task not found', taskId);
       return { ok: false };
     }
+    const now = new Date().toISOString();
     if (this.running) {
-      this.runQueue.push(taskId);
+      this.runQueue.push({ taskId, scheduledFor: now });
       return { ok: true };
     }
-    this.executeRun(task);
+    this.executeRun(task, now);
     return { ok: true };
   }
 
@@ -275,6 +296,8 @@ export class SchedulerService {
 
   private recoverOverdueTasks(): void {
     const now = Date.now();
+    const lookbackStart = now - MAX_RECOVERY_LOOKBACK_MS;
+
     for (const task of this.store.listTasks()) {
       if (task.status !== 'active') continue;
 
@@ -283,37 +306,84 @@ export class SchedulerService {
         ? new Date(runs[0].scheduledFor ?? runs[0].startedAt ?? 0).getTime()
         : 0;
 
-      const nextDue = computeNextRunAt(task, lastRunAt || now - 86_400_000);
+      // Don't scan further back than MAX_RECOVERY_LOOKBACK_MS
+      const anchor = Math.max(lastRunAt, lookbackStart);
 
-      if (nextDue < now) {
-        const overdueBy = now - nextDue;
-        if (overdueBy < CATCHUP_WINDOW_MS) {
-          logger.info('[scheduler] catching up overdue task', {
-            task: task.name,
-            overdueByMinutes: Math.round(overdueBy / 60_000),
-          });
-          this.runQueue.push(task.id);
-        } else {
-          logger.info('[scheduler] skipping stale task', {
-            task: task.name,
-            overdueByMinutes: Math.round(overdueBy / 60_000),
-          });
-          const missedRun: SchedulerRun = {
-            id: nanoid(),
-            taskId: task.id,
-            scheduledFor: new Date(nextDue).toISOString(),
-            status: 'missed',
-            finishedAt: new Date().toISOString(),
-            errorMessage: 'App was offline when this run was due',
-          };
-          this.store.createRun(missedRun);
-          scheduledTaskSubjects.runEvent$.next({
-            event: 'finished',
-            run: missedRun,
-            taskId: task.id,
-          });
-        }
+      // Collect every overdue slot since anchor (up to MAX_CATCHUP_SLOTS)
+      const overdueSlots: number[] = [];
+      let scanFrom = anchor;
+
+      for (let i = 0; i < MAX_CATCHUP_SLOTS; i++) {
+        const slot = computeNextRunAt(task, scanFrom);
+        if (slot >= now) break; // future — stop
+        overdueSlots.push(slot);
+        scanFrom = slot;
       }
+
+      if (overdueSlots.length === 0) continue;
+
+      // Mark all but the most-recent slot as 'missed' (skip already-recorded ones)
+      for (let i = 0; i < overdueSlots.length - 1; i++) {
+        const slotTs = overdueSlots[i];
+        const alreadyRecorded = runs.some(r => {
+          const t = new Date(r.scheduledFor ?? r.startedAt ?? 0).getTime();
+          return Math.abs(t - slotTs) < 60_000;
+        });
+        if (alreadyRecorded) continue;
+
+        const missedRun: SchedulerRun = {
+          id: nanoid(),
+          taskId: task.id,
+          scheduledFor: new Date(slotTs).toISOString(),
+          status: 'missed',
+          finishedAt: new Date().toISOString(),
+          errorMessage: 'App was unavailable when this run was due',
+        };
+        this.store.createRun(missedRun);
+        scheduledTaskSubjects.runEvent$.next({
+          event: 'finished',
+          run: missedRun,
+          taskId: task.id,
+        });
+      }
+
+      // Queue the most-recent overdue slot for immediate catch-up (idempotent)
+      const catchUpSlot = overdueSlots[overdueSlots.length - 1];
+      const alreadyQueued = this.runQueue.some(e => e.taskId === task.id);
+      const alreadyRan = runs.some(r => {
+        const t = new Date(r.scheduledFor ?? r.startedAt ?? 0).getTime();
+        return (
+          Math.abs(t - catchUpSlot) < 60_000 &&
+          r.status !== 'interrupted' &&
+          r.status !== 'needs_attention'
+        );
+      });
+
+      if (!alreadyQueued && !alreadyRan) {
+        logger.info('[scheduler] queuing catch-up run', {
+          task: task.name,
+          scheduledFor: new Date(catchUpSlot).toISOString(),
+          slotsSkipped: overdueSlots.length - 1,
+        });
+        this.runQueue.push({
+          taskId: task.id,
+          scheduledFor: new Date(catchUpSlot).toISOString(),
+        });
+      }
+    }
+  }
+
+  /** Start the next queued run if nothing is currently running. */
+  private drainQueueIfIdle(): void {
+    if (this.running || this.runQueue.length === 0) return;
+    const entry = this.runQueue.shift();
+    if (!entry) return;
+    const task = this.store.getTask(entry.taskId);
+    if (task) {
+      this.executeRun(task, entry.scheduledFor);
+    } else {
+      // Task deleted — try the next entry
+      this.drainQueueIfIdle();
     }
   }
 
@@ -348,11 +418,12 @@ export class SchedulerService {
     );
 
     const scheduledTaskId = earliestTask.id;
+    const scheduledFor = new Date(earliestAt).toISOString();
     this.timer = setTimeout(() => {
       this.timer = null;
       const latest = this.store.getTask(scheduledTaskId);
       if (latest?.status === 'active') {
-        this.executeRun(latest);
+        this.executeRun(latest, scheduledFor);
       } else {
         this.scheduleNext();
       }
@@ -361,7 +432,7 @@ export class SchedulerService {
 
   // ── Execution ──────────────────────────────────────────────────────────
 
-  private executeRun(task: SchedulerTask): void {
+  private executeRun(task: SchedulerTask, scheduledFor?: string): void {
     if (this.running) {
       logger.warn('[scheduler] already running, ignoring', task.id);
       return;
@@ -371,6 +442,7 @@ export class SchedulerService {
     const current = this.store.getTask(task.id);
     if (!current || current.status !== 'active') {
       logger.info('[scheduler] task no longer active, skipping', task.id);
+      this.drainQueueIfIdle();
       this.scheduleNext();
       return;
     }
@@ -379,12 +451,14 @@ export class SchedulerService {
     this.currentRunNeedsAttention = false;
     this.abortController = new AbortController();
     const { signal } = this.abortController;
+    const now = new Date().toISOString();
 
     const run: SchedulerRun = {
       id: nanoid(),
       taskId: task.id,
-      scheduledFor: new Date().toISOString(),
-      startedAt: new Date().toISOString(),
+      // Use the intended slot time if provided (catch-up runs), else now
+      scheduledFor: scheduledFor ?? now,
+      startedAt: now,
       status: 'running',
     };
 
@@ -475,15 +549,12 @@ export class SchedulerService {
         this.running = false;
         this.abortController = null;
         this.currentRunNeedsAttention = false;
-        const nextTaskId = this.runQueue.shift();
-        if (nextTaskId) {
-          const nextTask = this.store.getTask(nextTaskId);
-          if (nextTask) {
-            this.executeRun(nextTask);
-            return;
-          }
+        // Try to start the next queued run; if none, arm the next timer
+        if (this.runQueue.length > 0) {
+          this.drainQueueIfIdle();
+        } else {
+          this.scheduleNext();
         }
-        this.scheduleNext();
       });
   }
 }
