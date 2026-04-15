@@ -138,6 +138,7 @@ export class SchedulerService {
 
   private hookPort: number | undefined;
   private timer: ReturnType<typeof setTimeout> | null = null;
+  private clockRecheckInterval: ReturnType<typeof setInterval> | null = null;
   private running = false;
   private abortController: AbortController | null = null;
 
@@ -209,6 +210,21 @@ export class SchedulerService {
       this.scheduleNext();
     });
 
+    // Hourly re-arm: guards against NTP corrections and system clock jumps.
+    // IANA timezone strings are stored per task, so DST transitions are handled
+    // automatically by Intl at computation time — this is just a safety net for
+    // cases where a large clock delta would cause a setTimeout to fire late.
+    this.clockRecheckInterval = setInterval(
+      () => {
+        this.recoverOverdueTasks();
+        this.drainQueueIfIdle();
+        this.scheduleNext();
+      },
+      60 * 60_000 // 1 hour
+    );
+    // Don't hold the event loop open if the app is quitting
+    this.clockRecheckInterval.unref();
+
     logger.info(
       '[scheduler] initialized with',
       this.store.listTasks().length,
@@ -220,6 +236,10 @@ export class SchedulerService {
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;
+    }
+    if (this.clockRecheckInterval) {
+      clearInterval(this.clockRecheckInterval);
+      this.clockRecheckInterval = null;
     }
     this.abortController?.abort();
     this.permissionHandler.stop();
@@ -310,9 +330,25 @@ export class SchedulerService {
 
   // ── Scheduling ─────────────────────────────────────────────────────────
 
+  /**
+   * Scans all active tasks for missed slots and either queues a catch-up run
+   * or records a 'missed' entry for each one.
+   *
+   * Policy (explicit product decision for v1):
+   *   - Look back at most MAX_RECOVERY_LOOKBACK_MS (7 days).
+   *   - If multiple slots were missed, mark all but the most recent as 'missed'.
+   *   - Enqueue only the most-recent missed slot for immediate catch-up.
+   *
+   * Timezone safety: computeNextRunAt uses Intl.DateTimeFormat with the task's
+   * stored IANA timezone, so DST transitions and timezone changes are handled
+   * automatically at computation time without any special recovery logic.
+   */
   private recoverOverdueTasks(): void {
     const now = Date.now();
     const lookbackStart = now - MAX_RECOVERY_LOOKBACK_MS;
+    let totalOverdue = 0;
+    let totalCatchUp = 0;
+    let totalMissed = 0;
 
     for (const task of this.store.listTasks()) {
       if (task.status !== 'active') continue;
@@ -337,8 +373,10 @@ export class SchedulerService {
       }
 
       if (overdueSlots.length === 0) continue;
+      totalOverdue += overdueSlots.length;
 
       // Mark all but the most-recent slot as 'missed' (skip already-recorded ones)
+      let newMissed = 0;
       for (let i = 0; i < overdueSlots.length - 1; i++) {
         const slotTs = overdueSlots[i];
         const alreadyRecorded = runs.some(r => {
@@ -361,7 +399,9 @@ export class SchedulerService {
           run: missedRun,
           taskId: task.id,
         });
+        newMissed++;
       }
+      totalMissed += newMissed;
 
       // Queue the most-recent overdue slot for immediate catch-up (idempotent)
       const catchUpSlot = overdueSlots[overdueSlots.length - 1];
@@ -376,16 +416,34 @@ export class SchedulerService {
       });
 
       if (!alreadyQueued && !alreadyRan) {
-        logger.info('[scheduler] queuing catch-up run', {
+        logger.info('[scheduler] recovery decision: catch-up queued', {
           task: task.name,
-          scheduledFor: new Date(catchUpSlot).toISOString(),
-          slotsSkipped: overdueSlots.length - 1,
+          overdueSlots: overdueSlots.length,
+          newMissed,
+          catchUpSlot: new Date(catchUpSlot).toISOString(),
+          overdueByMin: Math.round((Date.now() - catchUpSlot) / 60_000),
         });
         this.runQueue.push({
           taskId: task.id,
           scheduledFor: new Date(catchUpSlot).toISOString(),
         });
+        totalCatchUp++;
+      } else {
+        logger.info('[scheduler] recovery decision: no action needed', {
+          task: task.name,
+          overdueSlots: overdueSlots.length,
+          newMissed,
+          reason: alreadyQueued ? 'already queued' : 'already ran',
+        });
       }
+    }
+
+    if (totalOverdue > 0 || totalCatchUp > 0) {
+      logger.info('[scheduler] recovery pass complete', {
+        overdueSlots: totalOverdue,
+        markedMissed: totalMissed,
+        catchUpQueued: totalCatchUp,
+      });
     }
   }
 

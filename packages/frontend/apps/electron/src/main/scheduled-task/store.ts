@@ -43,19 +43,36 @@ export class SchedulerStore {
   }
 
   async load(): Promise<void> {
-    try {
-      const content = await fs.readFile(this.filePath, 'utf-8');
-      const loaded = JSON.parse(content) as StoreData;
-      if (loaded.schemaVersion === SCHEMA_VERSION) {
+    // Try the canonical file first; fall back to the .tmp swap file if it
+    // exists and the canonical file is missing or corrupt. This ensures a
+    // crash-during-rename never loses more than the single in-flight write.
+    const sources = [this.filePath, `${this.filePath}.tmp`];
+
+    for (const src of sources) {
+      try {
+        const content = await fs.readFile(src, 'utf-8');
+        const loaded = JSON.parse(content) as StoreData;
+        if (loaded.schemaVersion !== SCHEMA_VERSION) continue;
         this.data = loaded;
+        if (src !== this.filePath) {
+          // Recovered from .tmp — promote it to canonical immediately
+          await fs.rename(src, this.filePath).catch(() => {});
+          logger.warn('[scheduler-store] recovered from .tmp backup', {
+            tasks: this.data.tasks.length,
+          });
+        } else {
+          logger.info('[scheduler-store] loaded', {
+            tasks: this.data.tasks.length,
+            runs: this.data.runs.length,
+          });
+        }
+        return;
+      } catch {
+        // Try next source
       }
-      logger.info('[scheduler-store] loaded', {
-        tasks: this.data.tasks.length,
-        runs: this.data.runs.length,
-      });
-    } catch {
-      logger.info('[scheduler-store] starting fresh (no existing file)');
     }
+
+    logger.info('[scheduler-store] starting fresh (no existing or valid file)');
   }
 
   // ── Tasks ──────────────────────────────────────────────────────────────
@@ -186,13 +203,20 @@ export class SchedulerStore {
     this.savePending = true;
     setImmediate(() => {
       this.savePending = false;
-      fs.writeFile(
-        this.filePath,
-        JSON.stringify(this.data, null, 2),
-        'utf-8'
-      ).catch(err => {
+      this.atomicFlush().catch(err => {
         logger.error('[scheduler-store] save failed', err);
       });
     });
+  }
+
+  /**
+   * Crash-safe write: serialise to <file>.tmp then rename into place.
+   * A crash between write and rename leaves the .tmp behind; load() will
+   * detect and recover from it on next startup.
+   */
+  private async atomicFlush(): Promise<void> {
+    const tmp = `${this.filePath}.tmp`;
+    await fs.writeFile(tmp, JSON.stringify(this.data, null, 2), 'utf-8');
+    await fs.rename(tmp, this.filePath);
   }
 }
