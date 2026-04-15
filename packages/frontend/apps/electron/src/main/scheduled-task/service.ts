@@ -170,8 +170,16 @@ export class SchedulerService {
       this.abortController?.abort();
     });
 
-    // Load persisted tasks and runs
+    // ── Load tasks from durable JSON store ────────────────────────────────
+    // This is intentionally renderer-independent: tasks were written to disk
+    // on every create/update mutation (via IPC syncTask/patchTask/syncAll).
+    // Recovery does NOT wait for the renderer to mount or call syncAll.
     await this.store.load();
+    logger.info(
+      '[scheduler] loaded from disk:',
+      this.store.listTasks().length,
+      'tasks — renderer sync not required for recovery'
+    );
 
     // Mark any runs that were left in 'running' state
     const interrupted = this.store.markInterruptedRuns();
@@ -183,7 +191,10 @@ export class SchedulerService {
       });
     }
 
-    // Catch up or skip overdue tasks, then immediately start any catch-up runs
+    // Product policy: scan back up to 7 days, mark older missed slots as
+    // 'missed', and run only the most recent overdue slot immediately.
+    // This prevents backfill storms while ensuring the user sees their
+    // task run as soon as possible after the app was unavailable.
     this.recoverOverdueTasks();
     this.drainQueueIfIdle();
 
@@ -260,12 +271,17 @@ export class SchedulerService {
   }
 
   /**
-   * Full replacement from renderer. Uses a merge strategy: renderer config
-   * is authoritative but existing main-side status is preserved if newer.
+   * Reconcile from renderer. Renderer config is authoritative for task
+   * definitions; main is authoritative for execution state.
+   *
+   * This is NOT the bootstrap path — the scheduler bootstraps from the
+   * durable JSON store on app launch without waiting for this call.
+   * Renderer sync is a "latest-config" reconcile that runs after the
+   * Scheduled page mounts.
    */
   syncAll(tasks: SchedulerTask[]): void {
     this.store.replaceAll(tasks);
-    logger.info('[scheduler] syncAll', tasks.length, 'tasks');
+    logger.info('[scheduler] syncAll (reconcile):', tasks.length, 'tasks');
     this.scheduleNext();
   }
 
@@ -451,15 +467,27 @@ export class SchedulerService {
     this.currentRunNeedsAttention = false;
     this.abortController = new AbortController();
     const { signal } = this.abortController;
-    const now = new Date().toISOString();
+    const nowIso = new Date().toISOString();
+    const nowMs = Date.now();
+
+    // Determine whether this is a catch-up run (slot passed while app was unavailable)
+    const isCatchup =
+      scheduledFor !== undefined &&
+      nowMs - new Date(scheduledFor).getTime() > 2 * 60_000; // >2 min late = catch-up
+    const overdueByMs =
+      isCatchup && scheduledFor
+        ? nowMs - new Date(scheduledFor).getTime()
+        : undefined;
 
     const run: SchedulerRun = {
       id: nanoid(),
       taskId: task.id,
       // Use the intended slot time if provided (catch-up runs), else now
-      scheduledFor: scheduledFor ?? now,
-      startedAt: now,
+      scheduledFor: scheduledFor ?? nowIso,
+      startedAt: nowIso,
       status: 'running',
+      catchup: isCatchup || undefined,
+      overdueByMs,
     };
 
     this.store.createRun(run);
@@ -468,6 +496,14 @@ export class SchedulerService {
       run,
       taskId: task.id,
     });
+
+    if (isCatchup) {
+      logger.info('[scheduler] catch-up run starting', {
+        task: task.name,
+        scheduledFor,
+        overdueByMin: Math.round((overdueByMs ?? 0) / 60_000),
+      });
+    }
 
     logger.info('[scheduler] executing run', {
       task: task.name,

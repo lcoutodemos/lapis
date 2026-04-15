@@ -361,6 +361,17 @@ export const runStatusText = style({
   flexShrink: 0,
 });
 
+export const runLateTag = style({
+  fontSize: 11,
+  fontWeight: 500,
+  color: '#FBBC04',
+  background: 'rgba(251, 188, 4, 0.12)',
+  borderRadius: 4,
+  padding: '1px 5px',
+  flexShrink: 0,
+  cursor: 'default',
+});
+
 export const noRuns = style({
   fontSize: 13,
   color: cssVarV2.text.tertiary,

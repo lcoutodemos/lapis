@@ -197,6 +197,8 @@ export class ScheduledTaskService extends Service {
               scheduledFor: run.scheduledFor,
               startedAt: run.startedAt,
               status: 'running',
+              catchup: run.catchup,
+              overdueByMs: run.overdueByMs,
             });
           } catch {
             // May fail if record already exists — ignore
@@ -209,6 +211,8 @@ export class ScheduledTaskService extends Service {
           status: run.status as any,
           summary: run.summary,
           outputDocId: run.outputDocId,
+          catchup: run.catchup,
+          overdueByMs: run.overdueByMs,
           errorState: run.errorMessage
             ? { message: run.errorMessage }
             : undefined,

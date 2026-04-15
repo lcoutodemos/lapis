@@ -41,7 +41,29 @@ const RUN_STATUS_COLORS: Record<string, string> = {
   running: '#4285F4',
   failed: '#EA4335',
   pending: '#9AA0A6',
+  missed: '#FBBC04',
+  interrupted: '#FF6D00',
+  needs_attention: '#EA4335',
 };
+
+const RUN_STATUS_LABELS: Record<string, string> = {
+  completed: 'Completed',
+  running: 'Running',
+  failed: 'Failed',
+  pending: 'Pending',
+  missed: 'Missed',
+  interrupted: 'Interrupted',
+  needs_attention: 'Needs attention',
+};
+
+/** Returns a human-readable "Xm late" / "Xh late" string for catch-up runs. */
+function formatLate(run: ScheduledRun): string | null {
+  if (!run.catchup || !run.overdueByMs) return null;
+  const ms = run.overdueByMs;
+  if (ms < 5 * 60_000) return null;
+  if (ms < 3_600_000) return `${Math.round(ms / 60_000)}m late`;
+  return `${(ms / 3_600_000).toFixed(1)}h late`;
+}
 
 function formatSchedule(task: ScheduledTask): string {
   const freq = FREQUENCY_LABELS[task.frequencyType];
@@ -311,7 +333,9 @@ function DetailPanel({
                 {liveRun.summary && (
                   <span className={styles.runSummary}>{liveRun.summary}</span>
                 )}
-                <span className={styles.runStatusText}>{liveRun.status}</span>
+                <span className={styles.runStatusText}>
+                  {RUN_STATUS_LABELS[liveRun.status] ?? liveRun.status}
+                </span>
               </div>
             </div>
           )}
@@ -322,23 +346,37 @@ function DetailPanel({
               <p className={styles.noRuns}>No runs yet.</p>
             ) : (
               <div className={styles.runsList}>
-                {runs.slice(0, 8).map((run: ScheduledRun) => (
-                  <div key={run.id} className={styles.runRow}>
-                    <span
-                      className={styles.runDot}
-                      style={{
-                        background: RUN_STATUS_COLORS[run.status] ?? '#9AA0A6',
-                      }}
-                    />
-                    <span className={styles.runDate}>
-                      {formatDate(run.scheduledFor ?? run.startedAt)}
-                    </span>
-                    {run.summary && (
-                      <span className={styles.runSummary}>{run.summary}</span>
-                    )}
-                    <span className={styles.runStatusText}>{run.status}</span>
-                  </div>
-                ))}
+                {runs.slice(0, 8).map((run: ScheduledRun) => {
+                  const lateLabel = formatLate(run);
+                  return (
+                    <div key={run.id} className={styles.runRow}>
+                      <span
+                        className={styles.runDot}
+                        style={{
+                          background:
+                            RUN_STATUS_COLORS[run.status] ?? '#9AA0A6',
+                        }}
+                      />
+                      <span className={styles.runDate}>
+                        {formatDate(run.scheduledFor ?? run.startedAt)}
+                      </span>
+                      {lateLabel && (
+                        <span
+                          className={styles.runLateTag}
+                          title={`Scheduled for ${formatDate(run.scheduledFor)}, ran at ${formatDate(run.startedAt)}`}
+                        >
+                          {lateLabel}
+                        </span>
+                      )}
+                      {run.summary && (
+                        <span className={styles.runSummary}>{run.summary}</span>
+                      )}
+                      <span className={styles.runStatusText}>
+                        {RUN_STATUS_LABELS[run.status] ?? run.status}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

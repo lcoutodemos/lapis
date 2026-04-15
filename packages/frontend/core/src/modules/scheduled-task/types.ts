@@ -48,6 +48,10 @@ export interface ScheduledRun {
   errorState?: Record<string, unknown>;
   /** Document ID created or updated by this run */
   outputDocId?: string;
+  /** True when run was a catch-up for a slot missed while app was unavailable */
+  catchup?: boolean;
+  /** Ms between intended scheduledFor and actual startedAt; only set when catchup */
+  overdueByMs?: number;
 }
 
 export interface CreateTaskInput {

@@ -54,6 +54,16 @@ export interface SchedulerRun {
   outputDocId?: string;
   /** Human-readable title of the output document */
   outputDocTitle?: string;
+  /**
+   * True when this run was started as a catch-up for a slot that was missed
+   * while the app was unavailable. The UI should show "ran late".
+   */
+  catchup?: boolean;
+  /**
+   * Milliseconds between the intended scheduledFor slot and the actual
+   * startedAt. Only set when catchup === true.
+   */
+  overdueByMs?: number;
 }
 
 export type RunEventType = 'started' | 'updated' | 'finished';
