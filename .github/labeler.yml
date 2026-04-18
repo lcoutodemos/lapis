@@ -44,11 +44,6 @@ mod:component:
       - any-glob-to-any-file:
           - 'packages/frontend/component/**/*'
 
-mod:server-native:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'packages/backend/native/**/*'
-
 mod:native:
   - changed-files:
       - any-glob-to-any-file:
@@ -78,8 +73,3 @@ app:electron:
   - changed-files:
       - any-glob-to-any-file:
           - 'packages/frontend/apps/electron/**/*'
-
-app:server:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'packages/backend/server/**/*'

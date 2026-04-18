@@ -181,59 +181,12 @@ function i18nnext() {
   );
 }
 
-async function appendErrorI18n() {
-  const server = new Package('@affine/server');
-  const defFilePath = server.srcPath.join('base/error/def.ts');
+// Error-key regeneration used to scrape USER_FRIENDLY_ERRORS from the server
+// package. That package has been removed in this fork, so error keys already
+// present in en.json are preserved verbatim and no new ones are generated
+// here. If/when a locally-owned error catalogue is introduced, this is where
+// it should be wired back in.
 
-  if (!defFilePath.exists()) {
-    throw new Error(
-      `Can not find Server I18n error definition file. It's not placed at [${defFilePath.relativePath}].`
-    );
-  }
-
-  const { USER_FRIENDLY_ERRORS } = await import(
-    defFilePath.toFileUrl().toString()
-  );
-
-  if (!USER_FRIENDLY_ERRORS) {
-    throw new Error(
-      `Can not find Server I18n error definition file. It's not placed at [${defFilePath.relativePath}] with name [USER_FRIENDLY_ERRORS].`
-    );
-  }
-
-  const en = readResource('en');
-
-  Object.keys(en).forEach(key => {
-    if (key.startsWith('error.')) {
-      delete en[key];
-    }
-  });
-
-  for (const key in USER_FRIENDLY_ERRORS) {
-    const def = USER_FRIENDLY_ERRORS[key] as {
-      type: string;
-      args?: Record<string, any>;
-      message: string | ((args: any) => string);
-    };
-
-    en[`error.${key.toUpperCase()}`] =
-      typeof def.message === 'string'
-        ? def.message
-        : def.message(
-            Object.keys(def.args ?? {}).reduce(
-              (args, key) => {
-                args[key] = `{{${key}}}`;
-                return args;
-              },
-              {} as Record<string, string>
-            )
-          );
-  }
-
-  writeResource('en', en);
-}
-
-await appendErrorI18n();
 if (shouldCleanup) {
   await cleanupResources();
 }

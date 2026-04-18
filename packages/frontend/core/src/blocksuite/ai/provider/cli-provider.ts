@@ -136,8 +136,24 @@ function isElectron(): boolean {
  * human-readable label describing what the command does.
  */
 function parseBashActivity(command: string): string {
+  // Order: most specific patterns first.
   if (/\/docs\/[^/\s]+\/apply/.test(command))
     return 'Applying changes to document';
+
+  // Collections — sub-resources (docs under collection) must come before bare collection ops
+  if (/DELETE[^|]*\/collections\/[^/\s]+\/docs\//.test(command))
+    return 'Removing doc from collection';
+  if (/\/collections\/[^/\s]+\/docs(?:\s|['"]|$)/.test(command))
+    return 'Adding doc to collection';
+  if (/DELETE[^|]*\/collections\//.test(command)) return 'Deleting collection';
+  if (/POST[^|]*\/collections(?:\s|['"]|$)/.test(command))
+    return 'Creating collection';
+  if (/\/collections/.test(command)) return 'Listing collections';
+
+  if (/\/selection/.test(command)) return 'Reading editor selection';
+  if (/\/docs\/[^/\s"']+\/blocks/.test(command))
+    return 'Reading document structure';
+
   if (
     /POST[^|]*\/docs\b/.test(command) ||
     /-X\s*POST[^|]*\/docs\b/.test(command) ||
@@ -147,6 +163,7 @@ function parseBashActivity(command: string): string {
   if (/\/search/.test(command)) return 'Searching workspace';
   if (/\/docs\/[^/\s"']+/.test(command)) return 'Reading document';
   if (/\/docs/.test(command)) return 'Listing documents';
+
   // Truncate long raw commands for display
   const bare = command.replace(/^(curl\s+(-[a-zA-Z]+\s+)*)/i, '').trim();
   return bare.length > 60
@@ -543,6 +560,44 @@ async function handleCapabilityOp(
         String(args['title']),
         args['initialContent'] ? String(args['initialContent']) : undefined
       );
+    }
+
+    case 'listCollections': {
+      const { listWorkspaceCollections } = await import('./cli-capability-ops');
+      return listWorkspaceCollections();
+    }
+
+    case 'createCollection': {
+      const { createWorkspaceCollection } =
+        await import('./cli-capability-ops');
+      return createWorkspaceCollection(String(args['name']));
+    }
+
+    case 'addDocToCollection': {
+      const { addDocToWorkspaceCollection } =
+        await import('./cli-capability-ops');
+      await addDocToWorkspaceCollection(
+        String(args['collectionId']),
+        String(args['docId'])
+      );
+      return { ok: true };
+    }
+
+    case 'removeDocFromCollection': {
+      const { removeDocFromWorkspaceCollection } =
+        await import('./cli-capability-ops');
+      await removeDocFromWorkspaceCollection(
+        String(args['collectionId']),
+        String(args['docId'])
+      );
+      return { ok: true };
+    }
+
+    case 'deleteCollection': {
+      const { deleteWorkspaceCollection } =
+        await import('./cli-capability-ops');
+      await deleteWorkspaceCollection(String(args['id']));
+      return { ok: true };
     }
 
     default:

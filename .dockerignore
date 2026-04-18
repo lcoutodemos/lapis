@@ -21,6 +21,5 @@
 # OS noise
 .DS_Store
 
-# Sourcemaps (keep server sourcemap for backend stacktraces)
+# Sourcemaps
 **/*.map
-!packages/backend/server/dist/main.js.map

@@ -8,8 +8,6 @@ pub mod indexer_sync;
 pub mod pool;
 pub mod storage;
 
-#[cfg(not(feature = "use-as-lib"))]
-use affine_common::napi_utils::to_napi_error;
 use chrono::NaiveDateTime;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
@@ -25,7 +23,7 @@ type Result<T> = napi::Result<T>;
 #[cfg(not(feature = "use-as-lib"))]
 impl From<error::Error> for napi::Error {
   fn from(err: error::Error) -> Self {
-    to_napi_error(err, napi::Status::GenericFailure)
+    napi::Error::new(napi::Status::GenericFailure, err.to_string())
   }
 }
 
@@ -133,12 +131,6 @@ impl DocStoragePool {
   pub async fn vacuum_into(&self, universal_id: String, path: String) -> Result<()> {
     self.pool.get(universal_id).await?.vacuum_into(path).await?;
     Ok(())
-  }
-
-  #[napi]
-  pub async fn crawl_doc_data(&self, universal_id: String, doc_id: String) -> Result<indexer::NativeCrawlResult> {
-    let result = self.get(universal_id).await?.crawl_doc_data(&doc_id).await?;
-    Ok(result)
   }
 
   #[napi]

@@ -22,12 +22,22 @@ export interface CLICapabilityDocMeta {
   updatedAt: string;
 }
 
+export interface CLICapabilityCollectionMeta {
+  id: string;
+  name: string;
+}
+
 export interface CLICapabilitySearchResult {
   docId: string;
-  docTitle: string;
-  excerpt: string;
+  title: string;
+  /** Highlighted block content excerpt (may contain <b>…</b> markers) */
+  snippet: string;
+  /** ID of the matched block, if any */
   blockId?: string;
+  /** Relevance score from the FTS engine */
   score: number;
+  /** ISO timestamp of doc's last update */
+  updatedAt?: string;
 }
 
 export interface CLICapabilitySelectionInfo {
@@ -43,7 +53,12 @@ export interface CLICapabilityRegistry {
   /** List all non-trashed documents */
   listDocs(): Promise<CLICapabilityDocMeta[]>;
 
-  /** Full-text + semantic search across the workspace */
+  /**
+   * Full-text search across all block content in the workspace.
+   * Backed by SQLite FTS5 via the indexer — matches on block content, not
+   * just titles. Returns metadata-only hits (no chunks) so the agent can
+   * decide which docs to read in full.
+   */
   searchWorkspace(
     query: string,
     opts?: { limit?: number }
@@ -63,6 +78,21 @@ export interface CLICapabilityRegistry {
 
   /** Create a new page in the workspace, return new docId */
   createPage(title: string, initialContent?: string): Promise<string>;
+
+  /** List all collections in the workspace */
+  listCollections(): Promise<CLICapabilityCollectionMeta[]>;
+
+  /** Create a new collection, return its ID */
+  createCollection(name: string): Promise<string>;
+
+  /** Add a document to a collection's allowList */
+  addDocToCollection(collectionId: string, docId: string): Promise<void>;
+
+  /** Remove a document from a collection's allowList */
+  removeDocFromCollection(collectionId: string, docId: string): Promise<void>;
+
+  /** Permanently delete a collection */
+  deleteCollection(id: string): Promise<void>;
 }
 
 let _registry: CLICapabilityRegistry | null = null;

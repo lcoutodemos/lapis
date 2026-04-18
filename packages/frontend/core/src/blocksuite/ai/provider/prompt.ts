@@ -1,5 +1,3 @@
-// manually synced with packages/backend/server/src/data/migrations/utils/prompts.ts
-// TODO(@Peng): automate this
 export const promptKeys = [
   // text actions
   'Chat With AFFiNE AI',

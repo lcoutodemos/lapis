@@ -90,20 +90,12 @@ Note: use `strip` from system instead of `binutils` if you are running MacOS. [s
 yarn affine @affine/native build
 ```
 
-### Build Server Dependencies
-
-```sh
-yarn affine @affine/server-native build
-```
-
 ## Testing
 
 Adding test cases is strongly encouraged when you contribute new features and bug fixes.
 
 We use [Playwright](https://playwright.dev/) for E2E test, and [vitest](https://vitest.dev/) for unit test.
 To test locally, please make sure browser binaries are already installed via `npx playwright install`.
-
-Start server before tests by following [`docs/developing-server.md`](./developing-server.md) first.
 
 ### Unit Test
 

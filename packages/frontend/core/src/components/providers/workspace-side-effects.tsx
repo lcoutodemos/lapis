@@ -18,11 +18,13 @@ import {
   EventSourceService,
   GraphQLService,
 } from '@affine/core/modules/cloud';
+import { CollectionService } from '@affine/core/modules/collection';
 import {
   GlobalDialogService,
   WorkspaceDialogService,
 } from '@affine/core/modules/dialogs';
 import { DocsService } from '@affine/core/modules/doc';
+import { DocsSearchService } from '@affine/core/modules/docs-search';
 import { EditorSettingService } from '@affine/core/modules/editor-setting';
 import { useRegisterNavigationCommands } from '@affine/core/modules/navigation/view/use-register-navigation-commands';
 import { QuickSearchContainer } from '@affine/core/modules/quicksearch';
@@ -54,10 +56,17 @@ export const WorkspaceSideEffects = () => {
   const t = useI18n();
   const pushGlobalLoadingEvent = useSetAtom(pushGlobalLoadingEventAtom);
   const resolveGlobalLoadingEvent = useSetAtom(resolveGlobalLoadingEventAtom);
-  const { workspaceService, docsService } = useServices({
+  const {
+    workspaceService,
+    docsService,
+    collectionService,
+    docsSearchService,
+  } = useServices({
     WorkspaceService,
     DocsService,
     EditorSettingService,
+    CollectionService,
+    DocsSearchService,
   });
   const currentWorkspace = workspaceService.workspace;
   const docsList = docsService.list;
@@ -169,9 +178,11 @@ export const WorkspaceSideEffects = () => {
     setupCLICapability({
       docsService,
       workspace: currentWorkspace,
+      collectionService,
+      docsSearchService,
     });
     registerCLIProvider();
-  }, [docsService, currentWorkspace]);
+  }, [collectionService, docsSearchService, docsService, currentWorkspace]);
 
   useRegisterWorkspaceCommands();
   useRegisterNavigationCommands();

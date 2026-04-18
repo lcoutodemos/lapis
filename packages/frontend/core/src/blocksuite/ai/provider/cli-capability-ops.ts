@@ -7,12 +7,14 @@
  */
 
 import type {
+  CLICapabilityCollectionMeta,
   CLICapabilityDocMeta,
   CLICapabilitySearchResult,
   CLICapabilitySelectionInfo,
 } from './cli-capability-registry';
 import { getCLICapability } from './cli-capability-registry';
 
+export type CollectionMeta = CLICapabilityCollectionMeta;
 export type DocMeta = CLICapabilityDocMeta;
 export type SearchResult = CLICapabilitySearchResult;
 export type SelectionInfo = CLICapabilitySelectionInfo;
@@ -52,6 +54,32 @@ export async function createNewPage(
   initialContent?: string
 ): Promise<string> {
   return getCLICapability().createPage(title, initialContent);
+}
+
+export async function listWorkspaceCollections(): Promise<CollectionMeta[]> {
+  return getCLICapability().listCollections();
+}
+
+export async function createWorkspaceCollection(name: string): Promise<string> {
+  return getCLICapability().createCollection(name);
+}
+
+export async function addDocToWorkspaceCollection(
+  collectionId: string,
+  docId: string
+): Promise<void> {
+  return getCLICapability().addDocToCollection(collectionId, docId);
+}
+
+export async function removeDocFromWorkspaceCollection(
+  collectionId: string,
+  docId: string
+): Promise<void> {
+  return getCLICapability().removeDocFromCollection(collectionId, docId);
+}
+
+export async function deleteWorkspaceCollection(id: string): Promise<void> {
+  return getCLICapability().deleteCollection(id);
 }
 
 // Stubs to satisfy the import in cli-provider.ts

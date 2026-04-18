@@ -16,14 +16,17 @@ import { parsePageDoc } from '@affine/reader';
 import type { EditorHost } from '@blocksuite/affine/std';
 import { TextSelection } from '@blocksuite/affine/std';
 import type { Store } from '@blocksuite/affine/store';
+import { firstValueFrom } from 'rxjs';
 
+import type { CollectionService } from '../../../modules/collection/services/collection';
 import type { DocsService } from '../../../modules/doc/services/docs';
+import type { DocsSearchService } from '../../../modules/docs-search/services/docs-search';
 import type { Workspace } from '../../../modules/workspace/entities/workspace';
 import {
   type CLICapabilityRegistry,
-  type CLICapabilitySearchResult,
   registerCLICapability,
 } from './cli-capability-registry';
+import { exposeSearchEvalToWindow } from './search-eval';
 
 // ---------------------------------------------------------------------------
 // Global active-editor reference
@@ -83,11 +86,15 @@ function getBlockTreeFromStore(store: Store): unknown {
 export interface CLICapabilitySetupOptions {
   docsService: DocsService;
   workspace: Workspace;
+  collectionService: CollectionService;
+  docsSearchService: DocsSearchService;
 }
 
 export function setupCLICapability({
   docsService,
   workspace,
+  collectionService,
+  docsSearchService,
 }: CLICapabilitySetupOptions): void {
   const registry: CLICapabilityRegistry = {
     // -----------------------------------------------------------------------
@@ -129,30 +136,33 @@ export function setupCLICapability({
     // -----------------------------------------------------------------------
     async searchWorkspace(query, opts = {}) {
       const limit = opts.limit ?? 10;
+      const trimmed = query.trim();
+      if (!trimmed) return [];
 
-      // Simple keyword search across all docs
-      // TODO: integrate AFFiNE's semantic search endpoint for richer results
-      const allDocs = docsService.list.docs$.value.filter(
-        (r: any) => !r.trash$.value
+      // Use the real FTS5-backed block-level indexer. 'local' prefers the
+      // on-device index (works offline; cloud indexer is a fallback).
+      const hits = await firstValueFrom(
+        docsSearchService.search$(trimmed, 'local')
       );
 
-      const results: CLICapabilitySearchResult[] = [];
-      const lowerQuery = query.toLowerCase();
+      // hits are already sorted by relevance from the indexer.
+      // Enrich with updatedAt from the doc record list.
+      const enriched = hits.slice(0, limit).map(hit => {
+        const record = docsService.list.doc$(hit.docId).value as any;
+        const updatedDate = record?.meta$.value?.updatedDate;
+        return {
+          docId: hit.docId,
+          title: hit.title || record?.title$.value || '(Untitled)',
+          snippet: hit.blockContent ?? '',
+          blockId: hit.blockId,
+          score: hit.score,
+          updatedAt: updatedDate
+            ? new Date(updatedDate).toISOString()
+            : undefined,
+        };
+      });
 
-      for (const record of allDocs as any[]) {
-        const title: string = record.title$.value ?? '';
-        if (title.toLowerCase().includes(lowerQuery)) {
-          results.push({
-            docId: record.id as string,
-            docTitle: title,
-            excerpt: `Document title matches "${query}"`,
-            score: 1.0,
-          });
-          if (results.length >= limit) break;
-        }
-      }
-
-      return results;
+      return enriched;
     },
 
     // -----------------------------------------------------------------------
@@ -309,7 +319,36 @@ export function setupCLICapability({
 
       return docRecord.id;
     },
+
+    // -----------------------------------------------------------------------
+    async listCollections() {
+      return collectionService.collectionMetas$.value.map((m: any) => ({
+        id: m.id as string,
+        name: m.name as string,
+      }));
+    },
+
+    // -----------------------------------------------------------------------
+    async createCollection(name: string) {
+      return collectionService.createCollection({ name });
+    },
+
+    // -----------------------------------------------------------------------
+    async addDocToCollection(collectionId: string, docId: string) {
+      collectionService.addDocToCollection(collectionId, docId);
+    },
+
+    // -----------------------------------------------------------------------
+    async removeDocFromCollection(collectionId: string, docId: string) {
+      collectionService.removeDocFromCollection(collectionId, docId);
+    },
+
+    // -----------------------------------------------------------------------
+    async deleteCollection(id: string) {
+      collectionService.deleteCollection(id);
+    },
   };
 
   registerCLICapability(registry);
+  exposeSearchEvalToWindow();
 }

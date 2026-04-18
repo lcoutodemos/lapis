@@ -7,7 +7,6 @@ export const RSPACK_SUPPORTED_PACKAGES = [
   '@affine/ios',
   '@affine/android',
   '@affine/electron-renderer',
-  '@affine/server',
   '@affine/reader',
 ] as const;
 

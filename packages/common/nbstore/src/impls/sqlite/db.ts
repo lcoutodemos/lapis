@@ -1,7 +1,6 @@
 import { AutoReconnectConnection } from '../../connection';
 import type {
   BlobRecord,
-  CrawlResult,
   DocClock,
   DocIndexedClock,
   DocRecord,
@@ -94,7 +93,6 @@ export interface NativeDBApis {
     peer: string,
     blobId: string
   ) => Promise<Date | null>;
-  crawlDocData: (id: string, docId: string) => Promise<CrawlResult>;
   ftsAddDocument: (
     id: string,
     indexName: string,

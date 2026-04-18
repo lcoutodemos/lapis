@@ -202,13 +202,13 @@ See [docs/contributing/tutorial.md](./docs/contributing/tutorial.md) for details
 
 ## License
 
-### Editions
-
-- AFFiNE Community Edition (CE) is the current available version, it's free for self-host under the MIT license.
-
-- AFFiNE Enterprise Edition (EE) is yet to be published, it will have more advanced features and enterprise-oriented offerings, including but not exclusive to rebranding and SSO, advanced admin and audit, etc., you may refer to https://affine.pro/pricing for more information
-
-See [LICENSE] for details.
+This fork follows the repository's MIT licensing terms as described in
+[LICENSE] and [LICENSE-MIT]. The upstream non-MIT backend and common-native
+directories removed in the cleanup are no longer present. Third-party
+components retained in the tree continue to carry their own original
+licenses (for example, parts of `blocksuite/**` remain under MPL-2.0 and
+various permissive upstream licenses — see the individual `LICENSE` files
+shipped alongside them).
 
 [all-contributors-badge]: https://img.shields.io/github/contributors/toeverything/AFFiNE
 [license]: ./LICENSE

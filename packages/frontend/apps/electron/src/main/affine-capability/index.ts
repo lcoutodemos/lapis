@@ -31,16 +31,26 @@ export interface DocMeta {
 
 export interface SearchResult {
   docId: string;
-  docTitle: string;
-  excerpt: string;
+  title: string;
+  /** Highlighted block content excerpt (may contain <b>…</b> markers) */
+  snippet: string;
+  /** ID of the matched block, if any */
   blockId?: string;
+  /** Relevance score from the FTS engine */
   score: number;
+  /** ISO timestamp of doc's last update */
+  updatedAt?: string;
 }
 
 export interface SelectionInfo {
   docId: string;
   blockIds: string[];
   markdown: string;
+}
+
+export interface CollectionMeta {
+  id: string;
+  name: string;
 }
 
 export class AFFiNECapability {
@@ -103,6 +113,36 @@ export class AFFiNECapability {
       initialContent,
     });
     return result as string;
+  }
+
+  /** List all collections in the workspace */
+  async listCollections(): Promise<CollectionMeta[]> {
+    const result = await this.request('listCollections', {});
+    return result as CollectionMeta[];
+  }
+
+  /** Create a new collection, return its ID */
+  async createCollection(name: string): Promise<string> {
+    const result = await this.request('createCollection', { name });
+    return result as string;
+  }
+
+  /** Add a document to a collection */
+  async addDocToCollection(collectionId: string, docId: string): Promise<void> {
+    await this.request('addDocToCollection', { collectionId, docId });
+  }
+
+  /** Remove a document from a collection */
+  async removeDocFromCollection(
+    collectionId: string,
+    docId: string
+  ): Promise<void> {
+    await this.request('removeDocFromCollection', { collectionId, docId });
+  }
+
+  /** Delete a collection */
+  async deleteCollection(id: string): Promise<void> {
+    await this.request('deleteCollection', { id });
   }
 
   // ---------------------------------------------------------------------------

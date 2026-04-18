@@ -13,6 +13,12 @@
  *   GET  /selection         → capability.getSelection()     → JSON
  *   POST /docs/:id/apply    body: { markdown, reason? }     → capability.applyChanges() → JSON {ok, message}
  *   POST /docs              body: { title, content? }       → capability.createPage() → JSON {docId, title}
+ *
+ *   GET    /collections               → capability.listCollections()           → JSON array
+ *   POST   /collections               body: { name }                           → { collectionId, name }
+ *   POST   /collections/:id/docs      body: { docId }                          → { ok }
+ *   DELETE /collections/:id/docs/:did                                          → { ok }
+ *   DELETE /collections/:id                                                    → { ok }
  */
 
 import fs from 'node:fs/promises';
@@ -175,6 +181,80 @@ export class AffineLocalServer {
             return;
           }
           await this.capability.applyChanges(docId, parsed.markdown);
+          this.sendJson(res, 200, { ok: true });
+          return;
+        }
+      }
+
+      // GET /collections
+      if (method === 'GET' && url === '/collections') {
+        const collections = await this.capability.listCollections();
+        this.sendJson(res, 200, collections);
+        return;
+      }
+
+      // POST /collections  (create collection)
+      if (method === 'POST' && url === '/collections') {
+        const body = await this.readBody(req);
+        let parsed: { name: string };
+        try {
+          parsed = JSON.parse(body);
+        } catch {
+          this.sendJson(res, 400, { error: 'Invalid JSON body' });
+          return;
+        }
+        if (!parsed.name) {
+          this.sendJson(res, 400, { error: 'Missing required field: name' });
+          return;
+        }
+        const collectionId = await this.capability.createCollection(
+          parsed.name
+        );
+        this.sendJson(res, 200, { collectionId, name: parsed.name });
+        return;
+      }
+
+      // Routes with collection :id
+      // /collections/:id  or  /collections/:id/docs  or  /collections/:id/docs/:docId
+      const collectionsMatch = url.match(
+        /^\/collections\/([^/]+)(\/docs(?:\/([^/]+))?)?$/
+      );
+      if (collectionsMatch) {
+        const collectionId = decodeURIComponent(collectionsMatch[1]);
+        const subPath = collectionsMatch[2] ?? '';
+        const docId = collectionsMatch[3]
+          ? decodeURIComponent(collectionsMatch[3])
+          : null;
+
+        // POST /collections/:id/docs  (add doc)
+        if (method === 'POST' && subPath === '/docs') {
+          const body = await this.readBody(req);
+          let parsed: { docId: string };
+          try {
+            parsed = JSON.parse(body);
+          } catch {
+            this.sendJson(res, 400, { error: 'Invalid JSON body' });
+            return;
+          }
+          if (!parsed.docId) {
+            this.sendJson(res, 400, { error: 'Missing required field: docId' });
+            return;
+          }
+          await this.capability.addDocToCollection(collectionId, parsed.docId);
+          this.sendJson(res, 200, { ok: true });
+          return;
+        }
+
+        // DELETE /collections/:id/docs/:docId  (remove doc)
+        if (method === 'DELETE' && subPath.startsWith('/docs/') && docId) {
+          await this.capability.removeDocFromCollection(collectionId, docId);
+          this.sendJson(res, 200, { ok: true });
+          return;
+        }
+
+        // DELETE /collections/:id  (delete collection)
+        if (method === 'DELETE' && subPath === '') {
+          await this.capability.deleteCollection(collectionId);
           this.sendJson(res, 200, { ok: true });
           return;
         }

@@ -178,11 +178,6 @@ function getRspackBundleConfigs(pkg: Package): MultiRspackOptions {
         ...workerConfigs,
       ] as MultiRspackOptions;
     }
-    case '@affine/server': {
-      return [
-        createRspackNodeTargetConfig(pkg, pkg.srcPath.join('index.ts').value),
-      ] as MultiRspackOptions;
-    }
     case '@affine/reader': {
       return [
         createRspackNodeTargetConfig(pkg, pkg.srcPath.join('index.ts').value, {

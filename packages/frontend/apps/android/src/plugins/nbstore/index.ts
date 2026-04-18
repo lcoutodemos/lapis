@@ -8,7 +8,6 @@ import {
 } from '@affine/mobile-shared/nbstore/payload';
 import {
   type BlobRecord,
-  type CrawlResult,
   type DocClock,
   type DocIndexedClock,
   type DocRecord,
@@ -350,12 +349,6 @@ export const NbStoreNativeDBApis: NativeDBApis = {
       blobId,
       uploadedAt: uploadedAt ? uploadedAt.getTime() : null,
     });
-  },
-  crawlDocData: async function (
-    id: string,
-    docId: string
-  ): Promise<CrawlResult> {
-    return await NbStore.crawlDocData({ id, docId });
   },
   ftsAddDocument: async function (
     id: string,

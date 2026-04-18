@@ -2,34 +2,28 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch AFFiNE Cloud",
+      "name": "Launch Electron (dev)",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "yarn",
       "cwd": "${workspaceFolder}",
       "runtimeArgs": [
         "affine",
-        "@affine/server",
+        "@affine/electron",
         "dev"
       ]
     },
     {
-      "name": "Lanuch AFFiNE Web",
+      "name": "Launch Electron Renderer (dev)",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "yarn",
       "cwd": "${workspaceFolder}",
       "runtimeArgs": [
         "affine",
-        "@affine/web",
+        "@affine/electron-renderer",
         "dev"
       ]
-    },
-    {
-      "type": "chrome",
-      "request": "launch",
-      "name": "Debug AFFiNE Web",
-      "url": "http://localhost:8080"
     }
   ]
 }

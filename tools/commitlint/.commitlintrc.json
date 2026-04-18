@@ -7,13 +7,11 @@
       [
         "admin",
         "electron",
-        "server",
         "core",
         "web",
         "mobile",
         "ios",
         "android",
-        "mobile-native",
         "docs",
         "component",
         "env",

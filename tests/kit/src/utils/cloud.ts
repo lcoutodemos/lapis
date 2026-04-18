@@ -1,5 +1,3 @@
-import { createRequire } from 'node:module';
-
 import { openHomePage } from '@affine-test/kit/utils/load-page';
 import {
   clickNewPageButton,
@@ -7,14 +5,18 @@ import {
   waitForEditorLoad,
 } from '@affine-test/kit/utils/page-logic';
 import { clickSideBarSettingButton } from '@affine-test/kit/utils/sidebar';
-import { Package } from '@affine-tools/utils/workspace';
 import { faker } from '@faker-js/faker';
 import { hash } from '@node-rs/argon2';
 import type { BrowserContext, Cookie, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { type PrismaClient } from '@prisma/client';
 import type { Assertions } from 'ava';
 import { z } from 'zod';
+
+// The former @affine/server backend is removed from this fork, which also
+// removed @prisma/client from node_modules. PrismaClient is aliased to `any`
+// so cloud e2e tests keep typechecking against their existing query shapes;
+// runPrisma always throws at runtime so the shape is never exercised.
+type PrismaClient = any;
 
 export async function getCurrentMailMessageCount() {
   const response = await fetch('http://localhost:8025/api/v2/messages');
@@ -54,24 +56,12 @@ const cloudUserSchema = z.object({
   password: z.string(),
 });
 
-const server = new Package('@affine/server');
-const require = createRequire(server.srcPath.join('index.ts').toFileUrl());
-
 export const runPrisma = async <T>(
-  cb: (prisma: PrismaClient) => Promise<T>
+  _cb: (prisma: PrismaClient) => Promise<T>
 ): Promise<T> => {
-  const { PrismaClient } = require('@prisma/client');
-  const client = new PrismaClient({
-    datasourceUrl:
-      process.env.DATABASE_URL ||
-      'postgresql://affine:affine@localhost:5432/affine',
-  });
-  await client.$connect();
-  try {
-    return await cb(client);
-  } finally {
-    await client.$disconnect();
-  }
+  throw new Error(
+    'runPrisma is unavailable: the @affine/server backend is not part of this build.'
+  );
 };
 
 export async function addUserToWorkspace(
@@ -159,7 +149,7 @@ export async function switchDefaultChatModel(model: string) {
         where: { name: 'Chat With AFFiNE AI' },
         select: { id: true },
       })
-      .then(f => f!.id);
+      .then((f: { id: string } | null) => f!.id);
 
     await client.aiPrompt.update({
       where: { id: promptId },

@@ -126,7 +126,6 @@ export declare class DocStoragePool {
   disconnect(universalId: string): Promise<void>
   checkpoint(universalId: string): Promise<void>
   vacuumInto(universalId: string, path: string): Promise<void>
-  crawlDocData(universalId: string, docId: string): Promise<NativeCrawlResult>
   setSpaceId(universalId: string, spaceId: string): Promise<void>
   pushUpdate(universalId: string, docId: string, update: Uint8Array): Promise<Date>
   getDocSnapshot(universalId: string, docId: string): Promise<DocRecord | null>
@@ -201,24 +200,6 @@ export interface ListedBlob {
   size: number
   mime: string
   createdAt: Date
-}
-
-export interface NativeBlockInfo {
-  blockId: string
-  flavour: string
-  content?: Array<string>
-  blob?: Array<string>
-  refDocId?: Array<string>
-  refInfo?: Array<string>
-  parentFlavour?: string
-  parentBlockId?: string
-  additional?: string
-}
-
-export interface NativeCrawlResult {
-  blocks: Array<NativeBlockInfo>
-  title: string
-  summary: string
 }
 
 export interface NativeMatch {
