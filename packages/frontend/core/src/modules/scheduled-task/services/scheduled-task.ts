@@ -13,6 +13,22 @@ type SchedulerApis = {
   removeTask: (args: { id: string }) => Promise<{ ok: boolean }>;
   syncAll: (args: { tasks: unknown[] }) => Promise<{ ok: boolean }>;
   runNow: (args: { taskId: string }) => Promise<{ ok: boolean }>;
+  listAllRuns: () => Promise<{
+    runs: Array<{
+      id: string;
+      taskId: string;
+      scheduledFor?: string;
+      startedAt?: string;
+      finishedAt?: string;
+      status: string;
+      summary?: string;
+      errorMessage?: string;
+      outputDocId?: string;
+      catchup?: boolean;
+      overdueByMs?: number;
+      triggeredBy?: 'schedule' | 'manual' | 'catchup';
+    }>;
+  }>;
 };
 
 type SchedulerEvents = {
@@ -180,6 +196,9 @@ export class ScheduledTaskService extends Service {
           summary?: string;
           errorMessage?: string;
           outputDocId?: string;
+          catchup?: boolean;
+          overdueByMs?: number;
+          triggeredBy?: 'schedule' | 'manual' | 'catchup';
         };
         taskId: string;
       };
@@ -199,6 +218,7 @@ export class ScheduledTaskService extends Service {
               status: 'running',
               catchup: run.catchup,
               overdueByMs: run.overdueByMs,
+              triggeredBy: run.triggeredBy,
             });
           } catch {
             // May fail if record already exists — ignore
@@ -213,11 +233,72 @@ export class ScheduledTaskService extends Service {
           outputDocId: run.outputDocId,
           catchup: run.catchup,
           overdueByMs: run.overdueByMs,
+          triggeredBy: run.triggeredBy,
           errorState: run.errorMessage
             ? { message: run.errorMessage }
             : undefined,
         });
       }
     });
+  }
+
+  /**
+   * Fetches every run from the main-process store and reconciles the CRDT
+   * against it. Fixes ghost records: runs left as 'running' in the CRDT
+   * because a 'finished' event was emitted before the renderer subscribed.
+   *
+   * Call this once on mount (after setupRunEventListener).
+   */
+  async reconcileRunsFromMain(): Promise<void> {
+    const apis = getSchedulerApis();
+    if (!apis?.listAllRuns) return;
+    try {
+      const { runs } = await apis.listAllRuns();
+      const db = (this.store as any).workspaceDBService?.userdataDB$?.value;
+      if (!db) return;
+
+      for (const run of runs) {
+        try {
+          // Try update first; if the record doesn't exist yet, create it
+          this.store.updateRun(run.id, {
+            startedAt: run.startedAt,
+            finishedAt: run.finishedAt,
+            status: run.status as any,
+            summary: run.summary,
+            outputDocId: run.outputDocId,
+            catchup: run.catchup,
+            overdueByMs: run.overdueByMs,
+            triggeredBy: run.triggeredBy,
+            errorState: run.errorMessage
+              ? { message: run.errorMessage }
+              : undefined,
+          });
+          // If updateRun didn't find a record, create one
+          const existing = db.scheduledRun.get(run.id);
+          if (!existing) {
+            db.scheduledRun.create({
+              id: run.id,
+              taskId: run.taskId,
+              scheduledFor: run.scheduledFor,
+              startedAt: run.startedAt,
+              finishedAt: run.finishedAt,
+              status: run.status,
+              summary: run.summary,
+              outputDocId: run.outputDocId,
+              catchup: run.catchup,
+              overdueByMs: run.overdueByMs,
+              triggeredBy: run.triggeredBy,
+              errorState: run.errorMessage
+                ? { message: run.errorMessage }
+                : undefined,
+            });
+          }
+        } catch {
+          // Ignore individual record errors
+        }
+      }
+    } catch {
+      // If main is unavailable (non-Electron), silently no-op
+    }
   }
 }

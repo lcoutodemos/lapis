@@ -17,7 +17,7 @@
 
 import { powerMonitor } from 'electron';
 import { nanoid } from 'nanoid';
-import { Subject } from 'rxjs';
+import { ReplaySubject } from 'rxjs';
 
 import { PermissionHandler } from '../cli-bridge/permission-handler';
 import { cliBridge } from '../cli-bridge/singleton';
@@ -33,8 +33,14 @@ import type {
 
 // ── Event subjects ────────────────────────────────────────────────────────────
 
+/**
+ * ReplaySubject with a large buffer so run events emitted before the renderer
+ * subscribes (e.g., the 'finished' events for interrupted runs emitted during
+ * main-process init) are replayed to the renderer on subscribe — rather than
+ * being lost, which would leave ghost 'running' records in the CRDT.
+ */
 export const scheduledTaskSubjects = {
-  runEvent$: new Subject<RunEventPayload>(),
+  runEvent$: new ReplaySubject<RunEventPayload>(500),
 };
 
 // ── Next-run computation ──────────────────────────────────────────────────────
@@ -142,9 +148,12 @@ export class SchedulerService {
   private running = false;
   private abortController: AbortController | null = null;
 
-  /** Queue entries carry the intended slot time so run records are accurate. */
-  private readonly runQueue: Array<{ taskId: string; scheduledFor: string }> =
-    [];
+  /** Queue entries carry the intended slot time and origin so run records are accurate. */
+  private readonly runQueue: Array<{
+    taskId: string;
+    scheduledFor: string;
+    triggeredBy: 'schedule' | 'manual' | 'catchup';
+  }> = [];
 
   private initialized = false;
 
@@ -313,10 +322,10 @@ export class SchedulerService {
     }
     const now = new Date().toISOString();
     if (this.running) {
-      this.runQueue.push({ taskId, scheduledFor: now });
+      this.runQueue.push({ taskId, scheduledFor: now, triggeredBy: 'manual' });
       return { ok: true };
     }
-    this.executeRun(task, now);
+    this.executeRun(task, now, 'manual');
     return { ok: true };
   }
 
@@ -326,6 +335,19 @@ export class SchedulerService {
 
   listRunsForTask(taskId: string): SchedulerRun[] {
     return this.store.listRunsForTask(taskId);
+  }
+
+  /**
+   * Returns every run across every task. Used by the renderer to reconcile
+   * its CRDT against main on mount — covers cases where events were emitted
+   * before any subscriber existed.
+   */
+  listAllRuns(): SchedulerRun[] {
+    const all: SchedulerRun[] = [];
+    for (const task of this.store.listTasks()) {
+      all.push(...this.store.listRunsForTask(task.id));
+    }
+    return all;
   }
 
   // ── Scheduling ─────────────────────────────────────────────────────────
@@ -354,8 +376,13 @@ export class SchedulerService {
       if (task.status !== 'active') continue;
 
       const runs = this.store.listRunsForTask(task.id);
-      const lastRunAt = runs[0]
-        ? new Date(runs[0].scheduledFor ?? runs[0].startedAt ?? 0).getTime()
+      // Ignore manual runs when computing the anchor — a "Run now" click
+      // must NOT be treated as fulfilling the scheduled slot.
+      const latestScheduledRun = runs.find(r => r.triggeredBy !== 'manual');
+      const lastRunAt = latestScheduledRun
+        ? new Date(
+            latestScheduledRun.scheduledFor ?? latestScheduledRun.startedAt ?? 0
+          ).getTime()
         : 0;
 
       // Don't scan further back than MAX_RECOVERY_LOOKBACK_MS
@@ -407,6 +434,7 @@ export class SchedulerService {
       const catchUpSlot = overdueSlots[overdueSlots.length - 1];
       const alreadyQueued = this.runQueue.some(e => e.taskId === task.id);
       const alreadyRan = runs.some(r => {
+        if (r.triggeredBy === 'manual') return false;
         const t = new Date(r.scheduledFor ?? r.startedAt ?? 0).getTime();
         return (
           Math.abs(t - catchUpSlot) < 60_000 &&
@@ -426,6 +454,7 @@ export class SchedulerService {
         this.runQueue.push({
           taskId: task.id,
           scheduledFor: new Date(catchUpSlot).toISOString(),
+          triggeredBy: 'catchup',
         });
         totalCatchUp++;
       } else {
@@ -454,7 +483,7 @@ export class SchedulerService {
     if (!entry) return;
     const task = this.store.getTask(entry.taskId);
     if (task) {
-      this.executeRun(task, entry.scheduledFor);
+      this.executeRun(task, entry.scheduledFor, entry.triggeredBy);
     } else {
       // Task deleted — try the next entry
       this.drainQueueIfIdle();
@@ -497,7 +526,7 @@ export class SchedulerService {
       this.timer = null;
       const latest = this.store.getTask(scheduledTaskId);
       if (latest?.status === 'active') {
-        this.executeRun(latest, scheduledFor);
+        this.executeRun(latest, scheduledFor, 'schedule');
       } else {
         this.scheduleNext();
       }
@@ -506,7 +535,11 @@ export class SchedulerService {
 
   // ── Execution ──────────────────────────────────────────────────────────
 
-  private executeRun(task: SchedulerTask, scheduledFor?: string): void {
+  private executeRun(
+    task: SchedulerTask,
+    scheduledFor?: string,
+    triggeredBy: 'schedule' | 'manual' | 'catchup' = 'schedule'
+  ): void {
     if (this.running) {
       logger.warn('[scheduler] already running, ignoring', task.id);
       return;
@@ -546,6 +579,7 @@ export class SchedulerService {
       status: 'running',
       catchup: isCatchup || undefined,
       overdueByMs,
+      triggeredBy: triggeredBy,
     };
 
     this.store.createRun(run);
@@ -590,7 +624,10 @@ export class SchedulerService {
         signal
       )
       .then(result => {
-        const finalStatus = result.needsAttention
+        // Permission hook may have flagged needs_attention via the callback
+        const needsAttention =
+          result.needsAttention || this.currentRunNeedsAttention;
+        const finalStatus = needsAttention
           ? 'needs_attention'
           : result.success
             ? 'completed'
@@ -612,12 +649,14 @@ export class SchedulerService {
           });
         }
 
-        if (!result.success && !result.needsAttention) {
-          this.store.patchTask(task.id, { status: 'failed' });
-          scheduledTaskSubjects.runEvent$.next({
-            event: 'finished',
-            run: finishedRun ?? run,
-            taskId: task.id,
+        if (!result.success && !needsAttention) {
+          // A single run failure must NOT disable the task. The run record
+          // itself captures the failure; the task remains 'active' so the
+          // next scheduled slot still fires and the user can Run Now again
+          // without manually reactivating.
+          logger.warn('[scheduler] run failed — task stays active', {
+            task: task.name,
+            error: result.errorMessage,
           });
         }
 

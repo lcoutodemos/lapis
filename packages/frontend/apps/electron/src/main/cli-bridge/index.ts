@@ -93,6 +93,7 @@ export class CLIBridge {
       signal?: AbortSignal;
       model?: string;
       hookPort?: number;
+      webAccess?: boolean;
       onEvent?: (event: CLIEvent) => void;
     }
   ): Promise<IsolatedRunResult> {
@@ -109,6 +110,7 @@ export class CLIBridge {
           | undefined,
         maxTurns: 30,
         hookPort: opts.hookPort,
+        webAccess: opts.webAccess,
         onEvent: opts.onEvent,
       },
       opts.signal

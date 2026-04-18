@@ -53,13 +53,24 @@ function dataUrlToContentBlock(dataUrl: string): unknown | null {
 }
 
 const buildSystemHint = (port: number): string =>
-  `AFFiNE workspace API on 127.0.0.1:${port}
-  GET  /docs                                           list docs (JSON)
-  GET  /docs/:id                                       read doc (markdown)
-  POST /search         {"query":"…","limit":10}        search docs (JSON)
-  POST /docs/:id/apply {"markdown":"…","reason":"…"}   write doc — read first, send full markdown
-  POST /docs           {"title":"…","content":"…"}     create doc
-Writes via /apply are immediately visible in the editor. Never emit markdown expecting it to be auto-applied.
+  `AFFiNE workspace API on 127.0.0.1:${port} — use curl via Bash.
+
+Documents:
+  GET    /docs                                           list docs (JSON)
+  GET    /docs/:id                                       read doc as markdown with <!-- block:ID --> anchors
+  POST   /docs            {"title":"…","content":"…"}    create doc → {docId, title}
+  POST   /docs/:id/apply  {"markdown":"…"}               write doc — read first, send full new markdown
+  POST   /search          {"query":"…","limit":10}       full-text search across block content → [{docId, title, snippet, blockId?, score, updatedAt?}]; snippets have <b>…</b> highlights — use hits as pointers, then GET /docs/:id for full content
+  GET    /selection                                      current editor selection (use when user says "this")
+
+Collections (grouped sets of docs, like folders or tags):
+  GET    /collections                                    list collections (JSON)
+  POST   /collections            {"name":"…"}            create collection → {collectionId, name}
+  POST   /collections/:id/docs   {"docId":"…"}           add doc to collection
+  DELETE /collections/:id/docs/:docId                    remove doc from collection
+  DELETE /collections/:id                                delete collection
+
+Writes via /apply are immediately visible in the editor. Never emit markdown expecting auto-apply — always POST to /apply.
 After any task — whether using tools or not — always write a brief chat reply (1-3 sentences) summarising what you did or answering the question directly.`;
 
 export class ClaudeCodeTransport implements ITransport {
@@ -93,6 +104,14 @@ export class ClaudeCodeTransport implements ITransport {
       stdio: ['pipe', 'pipe', 'pipe'],
       cwd: opts.workingDir || os.homedir(),
       env: { ...process.env },
+    });
+
+    // Capture spawn errors so unhandled 'error' events can't crash the process
+    // and so the runner never hangs awaiting 'exit' that never fires.
+    const spawnErrorRef: { current: Error | null } = { current: null };
+    proc.on('error', (err: Error) => {
+      spawnErrorRef.current = err;
+      logger.error('[claude-code] spawn error', err);
     });
 
     // Abort support: kill on signal
@@ -151,12 +170,32 @@ export class ClaudeCodeTransport implements ITransport {
       yield* this.streamEvents(proc.stdout, signal);
     }
 
-    // Wait for process exit
+    // Wait for process exit (or spawn error — whichever fires first).
+    // On ENOENT/EACCES the subprocess never reaches 'exit', only 'error'.
     const exitCode = await new Promise<number>(resolve => {
-      proc.once('exit', (code: number | null) => resolve(code ?? 0));
+      let settled = false;
+      proc.once('exit', (code: number | null) => {
+        if (settled) return;
+        settled = true;
+        resolve(code ?? 0);
+      });
+      proc.once('error', () => {
+        if (settled) return;
+        settled = true;
+        resolve(1);
+      });
     });
 
-    logger.info('[claude-code] exit', { exitCode });
+    if (spawnErrorRef.current) {
+      logger.warn('[claude-code] spawn failed', {
+        message: spawnErrorRef.current.message,
+      });
+    }
+
+    logger.info('[claude-code] exit', {
+      exitCode,
+      hadSpawnError: !!spawnErrorRef.current,
+    });
     if (exitCode !== 0 && !signal?.aborted) {
       const stderrTail = stderrLines.slice(-5).join('\n');
       logger.warn('[claude-code] non-zero exit', exitCode, stderrTail);

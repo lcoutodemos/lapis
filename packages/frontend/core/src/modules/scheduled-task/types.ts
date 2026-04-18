@@ -52,6 +52,8 @@ export interface ScheduledRun {
   catchup?: boolean;
   /** Ms between intended scheduledFor and actual startedAt; only set when catchup */
   overdueByMs?: number;
+  /** What triggered this run: schedule timer, user click, or startup catch-up. */
+  triggeredBy?: 'schedule' | 'manual' | 'catchup';
 }
 
 export interface CreateTaskInput {

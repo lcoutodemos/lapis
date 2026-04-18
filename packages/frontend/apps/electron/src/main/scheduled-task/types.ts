@@ -64,6 +64,12 @@ export interface SchedulerRun {
    * startedAt. Only set when catchup === true.
    */
   overdueByMs?: number;
+  /**
+   * What triggered this run: a scheduled timer, a user "Run now" click,
+   * or a startup catch-up. Recovery only anchors on 'schedule' or 'catchup'
+   * runs — manual runs must not fill a scheduled slot.
+   */
+  triggeredBy?: 'schedule' | 'manual' | 'catchup';
 }
 
 export type RunEventType = 'started' | 'updated' | 'finished';

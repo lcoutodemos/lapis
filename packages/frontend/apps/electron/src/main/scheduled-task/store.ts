@@ -33,7 +33,8 @@ export class SchedulerStore {
   };
 
   private readonly filePath: string;
-  private savePending = false;
+  private saveInFlight = false;
+  private savePendingFlag = false;
 
   constructor() {
     this.filePath = path.join(
@@ -198,15 +199,38 @@ export class SchedulerStore {
 
   // ── Private ────────────────────────────────────────────────────────────
 
+  /**
+   * Schedule a persistent save. Coalesces multiple rapid mutations into a
+   * single write, and serializes saves so atomicFlush() never runs
+   * concurrently (avoids .tmp race → ENOENT on rename).
+   */
   private scheduleSave(): void {
-    if (this.savePending) return;
-    this.savePending = true;
+    this.savePendingFlag = true;
+    if (this.saveInFlight) return;
+    this.saveInFlight = true;
+    // Give the current microtask a chance to settle so rapid mutations coalesce
     setImmediate(() => {
-      this.savePending = false;
-      this.atomicFlush().catch(err => {
-        logger.error('[scheduler-store] save failed', err);
-      });
+      this.drainSaves().catch(err =>
+        logger.error('[scheduler-store] drainSaves unexpected', err)
+      );
     });
+  }
+
+  private async drainSaves(): Promise<void> {
+    try {
+      while (this.savePendingFlag) {
+        this.savePendingFlag = false;
+        try {
+          await this.atomicFlush();
+        } catch (err) {
+          logger.error('[scheduler-store] save failed', err);
+          // Don't re-queue immediately on error — let the next mutation trigger it
+          break;
+        }
+      }
+    } finally {
+      this.saveInFlight = false;
+    }
   }
 
   /**
